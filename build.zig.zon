@@ -1,0 +1,18 @@
+.{
+    .name = "Zsnake",
+
+    .version = "0.0.0",
+
+    .dependencies = .{
+        .@"raylib-zig" = .{
+            .url = "https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz",
+            .hash = "12204597958bef7cdc168a32e0578b023e6b84adab455c479f92f07998cd46ba6fb0",
+        },
+        .zigglgen = .{
+            .url = "git+https://github.com/castholm/zigglgen#ae7bebdc5fff0c61ad12be786a1c23581fd23625",
+            .hash = "122046eea4433073c12b657bd0363a7694989ee47a2cf4f87e3b4281065758fb1850",
+        },
+    },
+
+    .paths = .{""},
+}
