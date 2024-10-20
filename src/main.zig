@@ -3,10 +3,14 @@ const raylib = @import("raylib");
 
 const screenWidth = 1080;
 const screenHeight = 720;
-
 const Rectangle = raylib.Rectangle;
+const Colour = raylib.Color;
+
 const Direction = enum { up, down, left, right };
 const Snake = struct {
+    const headColour = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
+    const bodyColour = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
+    const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
     pub const sectionSize = 10;
     const maxSize = (screenWidth / Snake.sectionSize) * (screenHeight / Snake.sectionSize);
     const sectionGap = 0.01;
@@ -72,10 +76,10 @@ const Snake = struct {
                 break;
             }
             if (idx == 0) {
-                raylib.drawRectangleRec(section.*, raylib.Color.red);
+                raylib.drawRectangleRec(section.*, headColour);
                 continue;
             }
-            raylib.drawRectangleRec(section.*, raylib.Color.black);
+            raylib.drawRectangleRec(section.*, bodyColour);
         }
     }
 };
@@ -94,7 +98,7 @@ pub fn main() !void {
         raylib.beginDrawing();
         defer raylib.endDrawing();
 
-        raylib.clearBackground(raylib.Color.ray_white);
+        raylib.clearBackground(backgroundColour);
 
         snake.draw();
     }
