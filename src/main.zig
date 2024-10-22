@@ -85,7 +85,7 @@ const Snake = struct {
 
     pub fn handleKeyPress(self: *Snake, key: Keys) void {
         switch (key) {
-            Keys.key_up => {
+            Keys.key_up, Keys.key_k => {
                 switch (self.direction) {
                     Direction.down, Direction.up => {
                         return;
@@ -95,7 +95,7 @@ const Snake = struct {
                     },
                 }
             },
-            Keys.key_down => {
+            Keys.key_down, Keys.key_j => {
                 switch (self.direction) {
                     Direction.up, Direction.down => {
                         return;
@@ -105,7 +105,7 @@ const Snake = struct {
                     },
                 }
             },
-            Keys.key_left => {
+            Keys.key_left, Keys.key_h => {
                 switch (self.direction) {
                     Direction.right, Direction.left => {
                         return;
@@ -115,47 +115,7 @@ const Snake = struct {
                     },
                 }
             },
-            Keys.key_right => {
-                switch (self.direction) {
-                    Direction.left, Direction.right => {
-                        return;
-                    },
-                    else => {
-                        self.direction = Direction.right;
-                    },
-                }
-            },
-            Keys.key_j => {
-                switch (self.direction) {
-                    Direction.up, Direction.down => {
-                        return;
-                    },
-                    else => {
-                        self.direction = Direction.down;
-                    },
-                }
-            },
-            Keys.key_k => {
-                switch (self.direction) {
-                    Direction.down, Direction.up => {
-                        return;
-                    },
-                    else => {
-                        self.direction = Direction.up;
-                    },
-                }
-            },
-            Keys.key_h => {
-                switch (self.direction) {
-                    Direction.right => {
-                        return;
-                    },
-                    else => {
-                        self.direction = Direction.left;
-                    },
-                }
-            },
-            Keys.key_l => {
+            Keys.key_right, Keys.key_l => {
                 switch (self.direction) {
                     Direction.left, Direction.right => {
                         return;
