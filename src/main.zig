@@ -5,12 +5,45 @@ const screenWidth = 1080;
 const screenHeight = 720;
 const Rectangle = raylib.Rectangle;
 const Colour = raylib.Color;
+const Keys = raylib.KeyboardKey;
+
+const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
+
+pub fn main() !void {
+    raylib.initWindow(screenWidth, screenHeight, "Znake");
+    defer raylib.closeWindow();
+
+    var snake = Snake.init();
+
+    raylib.setTargetFPS(144);
+
+    while (!raylib.windowShouldClose()) {
+        const pressedKey = raylib.getKeyPressed();
+
+        Snake.handleKeyPress(&snake, pressedKey);
+
+        Snake.move(&snake);
+
+        raylib.beginDrawing();
+        defer raylib.endDrawing();
+
+        raylib.clearBackground(backgroundColour);
+
+        snake.draw();
+    }
+}
 
 const Direction = enum { up, down, left, right };
+const SectionTarget = union(Direction) { up: f32, down: f32, left: f32, right: f32 };
+
+const Section = struct {
+    section: Rectangle,
+    target: SectionTarget,
+};
+
 const Snake = struct {
     const headColour = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
     const bodyColour = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
-    const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
     pub const sectionSize = 10;
     const maxSize = (screenWidth / Snake.sectionSize) * (screenHeight / Snake.sectionSize);
     const sectionGap = 0.01;
@@ -34,6 +67,92 @@ const Snake = struct {
         }
 
         return snake;
+    }
+
+    pub fn handleKeyPress(self: *Snake, key: Keys) void {
+        switch (key) {
+            Keys.key_up => {
+                switch (self.direction) {
+                    Direction.down, Direction.up => {
+                        return;
+                    },
+                    else => {
+                        self.direction = Direction.up;
+                    },
+                }
+            },
+            Keys.key_down => {
+                switch (self.direction) {
+                    Direction.up, Direction.down => {
+                        return;
+                    },
+                    else => {
+                        self.direction = Direction.down;
+                    },
+                }
+            },
+            Keys.key_left => {
+                switch (self.direction) {
+                    Direction.right, Direction.left => {
+                        return;
+                    },
+                    else => {
+                        self.direction = Direction.left;
+                    },
+                }
+            },
+            Keys.key_right => {
+                switch (self.direction) {
+                    Direction.left, Direction.right => {
+                        return;
+                    },
+                    else => {
+                        self.direction = Direction.right;
+                    },
+                }
+            },
+            Keys.key_j => {
+                switch (self.direction) {
+                    Direction.up, Direction.down => {
+                        return;
+                    },
+                    else => {
+                        self.direction = Direction.down;
+                    },
+                }
+            },
+            Keys.key_k => {
+                switch (self.direction) {
+                    Direction.down, Direction.up => {
+                        return;
+                    },
+                    else => {
+                        self.direction = Direction.up;
+                    },
+                }
+            },
+            Keys.key_h => {
+                switch (self.direction) {
+                    Direction.right => {
+                        return;
+                    },
+                    else => {
+                        self.direction = Direction.left;
+                    },
+                }
+            },
+            Keys.key_l => {
+                switch (self.direction) {
+                    Direction.left, Direction.right => {
+                        return;
+                    },
+                    else => {
+                        self.direction = Direction.right;
+                    },
+                }
+            },
+            else => {},
+        }
     }
 
     pub fn move(self: *Snake) void {
@@ -83,23 +202,3 @@ const Snake = struct {
         }
     }
 };
-
-pub fn main() !void {
-    raylib.initWindow(screenWidth, screenHeight, "Znake");
-    defer raylib.closeWindow();
-
-    var snake = Snake.init();
-
-    raylib.setTargetFPS(144);
-
-    while (!raylib.windowShouldClose()) {
-        Snake.move(&snake);
-
-        raylib.beginDrawing();
-        defer raylib.endDrawing();
-
-        raylib.clearBackground(backgroundColour);
-
-        snake.draw();
-    }
-}
