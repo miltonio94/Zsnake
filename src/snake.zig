@@ -10,19 +10,21 @@ const screenWidth = 1080;
 const screenHeight = 720;
 
 const Direction = enum { up, down, left, right };
-const SectionTarget = union(Direction) {
-    up: f32,
-    down: f32,
-    left: f32,
-    right: f32,
-};
+// const SectionTarget = union(Direction) {
+//     up: f32,
+//     down: f32,
+//     left: f32,
+//     right: f32,
+// };
+
+const Point = struct { x: f32, y: f32 };
 
 const Section = struct {
     section: Rectangle,
     // NOTE: If this gets too big it will cause a segment fault
     // needs to be investigated, for now, we will keep 50
     // TODO: Replace array with deque
-    targets: [50]SectionTarget = undefined,
+    targets: [50]Point = undefined,
     queuPosition: usize = 0,
     pub fn printStatus(self: Section) void {
         print(
@@ -46,58 +48,20 @@ const Section = struct {
         }
     }
     pub fn handleQueue(self: *Section) void {
-        switch (self.targets[0]) {
-            .up => |targetY| {
-                if (self.section.y < targetY) {
-                    return;
-                }
-                self.queuShiftLeft();
-            },
-            .down => |targetY| {
-                if (self.section.y > targetY) {
-                    return;
-                }
-                self.queuShiftLeft();
-            },
-            .left => |targetX| {
-                if (self.section.x < targetX) {
-                    return;
-                }
-                self.queuShiftLeft();
-            },
-            .right => |targetX| {
-                if (self.section.x > targetX) {
-                    return;
-                }
-                self.queuShiftLeft();
-            },
+        // TODO: Fix this with new method to have a Point be a target
+
+        if (self.section.y == self.targets[0].y and self.section.x == self.targets[0].x) {
+            self.queuShiftLeft();
         }
         if (self.queuPosition != 0) {
             self.queuPosition = self.queuPosition - 1;
         }
     }
-    pub fn pushNewTarget(
-        self: *Section,
-        nextDirection: Direction,
-        target: Rectangle,
-    ) void {
+    pub fn pushNewTarget(self: *Section, target: *Rectangle) void {
         if (self.queuPosition == (self.targets.len - 1)) {
             return;
         }
-        switch (nextDirection) {
-            .up => {
-                self.targets[self.queuPosition] = SectionTarget{ .up = target.y };
-            },
-            .down => {
-                self.targets[self.queuPosition] = SectionTarget{ .down = target.y };
-            },
-            .left => {
-                self.targets[self.queuPosition] = SectionTarget{ .left = target.x };
-            },
-            .right => {
-                self.targets[self.queuPosition] = SectionTarget{ .right = target.x };
-            },
-        }
+        self.targets[self.queuPosition] = Point{ .x = target.x, .y = target.y };
         self.queuPosition += 1;
     }
     pub fn move(self: *Section, direction: Direction, speed: f16) void {
@@ -135,43 +99,19 @@ const Section = struct {
             }
             return;
         }
-        switch (self.targets[0]) {
-            .up => |targetY| {
-                // print("in section swith statement up\n", .{});
-                if (targetY > self.section.y) {
-                    // TODO shitf everything by one to the left
-                } else {
-                    // print("in section swith statement up else part", .{});
-                    self.section.y = self.section.y - speed;
-                }
-            },
-            .down => |targetY| {
-                // print("in section swith statement down\n", .{});
-                if (targetY < self.section.y) {
-                    // TODO shitf everything by one to the left
-                } else {
-                    // print("in section swith statement down else part", .{});
-                    self.section.y = self.section.y + speed;
-                }
-            },
-            .left => |targetX| {
-                // print("in section swith statement left\n", .{});
-                if (targetX > self.section.x) {
-                    // TODO shitf everything by one to the left
-                } else {
-                    // print("in section swith statement left else part", .{});
-                    self.section.x = self.section.x - speed;
-                }
-            },
-            .right => |targetX| {
-                // print("in section swith statement right\n", .{});
-                if (targetX < self.section.x) {
-                    // TODO shitf everything by one to the left
-                } else {
-                    // print("in section swith statement right else part", .{});
-                    self.section.x = self.section.x + speed;
-                }
-            },
+        const target = &self.targets[0];
+
+        if (self.section.y > target.y) {
+            self.section.y += speed;
+        }
+        if (self.section.y < target.y) {
+            self.section.y -= speed;
+        }
+        if (self.section.x > target.x) {
+            self.section.x += speed;
+        }
+        if (self.section.x < target.x) {
+            self.section.x -= speed;
         }
     }
     // pub fn shiftTargetsToLeft(self: *Section) void {
@@ -263,7 +203,6 @@ pub const Snake = struct {
     }
 
     pub fn handleKeyPress(self: *Snake, key: Keys) void {
-        const headDirection = self.direction;
         // var previousSectionDirection: Direction = undefined;
         switch (key) {
             Keys.key_up, Keys.key_k => {
@@ -273,15 +212,15 @@ pub const Snake = struct {
                     },
                     else => {
                         self.direction = Direction.up;
-                        var prev_section = self.head;
+                        var prev_section = &self.head;
                         for (&self.body, 0..) |*section, idx| {
                             if (idx == 0) {
-                                Section.pushNewTarget(section, headDirection, prev_section);
-                                prev_section = section.section;
+                                section.pushNewTarget(prev_section);
+                                prev_section = &section.section;
                                 continue;
                             }
-                            Section.pushNewTarget(section, headDirection, prev_section);
-                            prev_section = section.section;
+                            Section.pushNewTarget(section, prev_section);
+                            prev_section = &section.section;
                         }
                     },
                 }
@@ -293,15 +232,15 @@ pub const Snake = struct {
                     },
                     else => {
                         self.direction = Direction.down;
-                        var prev_section = self.head;
+                        var prev_section = &self.head;
                         for (&self.body, 0..) |*section, idx| {
                             if (idx == 0) {
-                                Section.pushNewTarget(section, headDirection, prev_section);
-                                prev_section = section.section;
+                                Section.pushNewTarget(section, prev_section);
+                                prev_section = &section.section;
                                 continue;
                             }
-                            Section.pushNewTarget(section, headDirection, prev_section);
-                            prev_section = section.section;
+                            Section.pushNewTarget(section, prev_section);
+                            prev_section = &section.section;
                         }
                     },
                 }
@@ -313,15 +252,15 @@ pub const Snake = struct {
                     },
                     else => {
                         self.direction = Direction.left;
-                        var prev_section = self.head;
+                        var prev_section = &self.head;
                         for (&self.body, 0..) |*section, idx| {
                             if (idx == 0) {
-                                Section.pushNewTarget(section, headDirection, prev_section);
-                                prev_section = section.section;
+                                Section.pushNewTarget(section, prev_section);
+                                prev_section = &section.section;
                                 continue;
                             }
-                            Section.pushNewTarget(section, headDirection, prev_section);
-                            prev_section = section.section;
+                            Section.pushNewTarget(section, prev_section);
+                            prev_section = &section.section;
                         }
                     },
                 }
@@ -333,15 +272,15 @@ pub const Snake = struct {
                     },
                     else => {
                         self.direction = Direction.right;
-                        var prev_section = self.head;
+                        var prev_section = &self.head;
                         for (&self.body, 0..) |*section, idx| {
                             if (idx == 0) {
-                                Section.pushNewTarget(section, headDirection, prev_section);
-                                prev_section = section.section;
+                                Section.pushNewTarget(section, prev_section);
+                                prev_section = &section.section;
                                 continue;
                             }
-                            Section.pushNewTarget(section, headDirection, prev_section);
-                            prev_section = section.section;
+                            Section.pushNewTarget(section, prev_section);
+                            prev_section = &section.section;
                         }
                     },
                 }
