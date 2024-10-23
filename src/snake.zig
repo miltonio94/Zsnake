@@ -18,13 +18,15 @@ const Direction = enum { up, down, left, right };
 // };
 
 const Point = struct { x: f32, y: f32 };
+const Target = struct { position: Point, nextDirection: Direction };
 
 const Section = struct {
     section: Rectangle,
+    direction: Direction = Direction.left,
     // NOTE: If this gets too big it will cause a segment fault
     // needs to be investigated, for now, we will keep 50
     // TODO: Replace array with deque
-    targets: [50]Point = undefined,
+    targets: [50]Direction = undefined,
     queuPosition: usize = 0,
     pub fn printStatus(self: Section) void {
         print(
@@ -43,7 +45,7 @@ const Section = struct {
             if (idx == self.queuPosition) {
                 return;
             }
-            var t = target.*;
+            var t = target;
             t = self.targets[idx + 1];
         }
     }
@@ -64,59 +66,42 @@ const Section = struct {
         self.targets[self.queuPosition] = Point{ .x = target.x, .y = target.y };
         self.queuPosition += 1;
     }
-    pub fn move(self: *Section, direction: Direction, speed: f16) void {
+    pub fn move(self: *Section, speed: f16) void {
         // print(
         //     "\n\nIn Section.move direction param: {any}\n queuPosition: {d}\n",
         //     .{ direction, self.queuPosition },
         // );
-        if (self.queuPosition == 0) {
-            // print("queu position is 0\n\n", .{});
-            switch (direction) {
-                .up => {
-                    self.*.section.y = self.section.y - speed;
-                    if (self.section.y < 0) {
-                        self.section.y = screenHeight;
-                    }
-                },
-                .down => {
-                    self.*.section.y = self.section.y + speed;
-                    if (self.section.y > screenHeight) {
-                        self.section.y = 0;
-                    }
-                },
-                .left => {
-                    self.*.section.x = self.section.x - speed;
-                    if (self.section.x < 0.0) {
-                        self.section.x = screenWidth;
-                    }
-                },
-                .right => {
-                    self.*.section.x = self.section.x + speed;
-                    if (self.section.x > screenWidth) {
-                        self.section.x = 0;
-                    }
-                },
-            }
-            return;
-        }
-        const target = &self.targets[0];
-
-        if (self.section.y > target.y) {
-            self.section.y += speed;
-        }
-        if (self.section.y < target.y) {
-            self.section.y -= speed;
-        }
-        if (self.section.x > target.x) {
-            self.section.x += speed;
-        }
-        if (self.section.x < target.x) {
-            self.section.x -= speed;
+        switch (self.direction) {
+            .up => {
+                if (self.section.y < 0) {
+                    self.section.y = screenHeight;
+                    return;
+                }
+                self.section.y = self.section.y - speed;
+            },
+            .down => {
+                if (self.section.y > screenHeight) {
+                    self.section.y = 0;
+                    return;
+                }
+                self.section.y = self.section.y + speed;
+            },
+            .left => {
+                if (self.section.x < 0.0) {
+                    self.section.x = screenWidth;
+                    return;
+                }
+                self.section.x = self.section.x - speed;
+            },
+            .right => {
+                if (self.section.x > screenWidth) {
+                    self.section.x = 0;
+                    return;
+                }
+                self.section.x = self.section.x + speed;
+            },
         }
     }
-    // pub fn shiftTargetsToLeft(self: *Section) void {
-
-    // }
     pub fn init(rec: Rectangle) Section {
         return Section{
             .section = rec,
