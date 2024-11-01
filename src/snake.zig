@@ -22,6 +22,7 @@ const Section = struct {
     // TODO: Replace array with deque
     targets: [50]Target = undefined,
     queuPosition: usize = 0,
+
     pub fn printStatus(self: Section) void {
         print(
             "\t\tSection.x: {d}\t Section.y: {d}\t Section.queuPosition: {any}\n",
@@ -34,6 +35,7 @@ const Section = struct {
             print("\t\t\tSection.targets[{d}]: {any}\n", .{ i, value });
         }
     }
+
     fn queuShiftLeft(self: *Section) void {
         for (&self.targets, 0..) |*target, idx| {
             if (idx == self.queuPosition) {
@@ -42,31 +44,27 @@ const Section = struct {
             target.* = self.targets[idx + 1];
         }
     }
-    pub fn handleQueue(self: *Section) void {
-        // TODO: Fix this with new method to have a Point be a target
 
+    pub fn handleQueue(self: *Section) void {
         const nextTarget = self.targets[0];
-        const minMarginY = nextTarget.position.y - 0.75;
-        const maxMarginY = nextTarget.position.y + 0.75;
-        const minMarginX = nextTarget.position.x - 0.75;
-        const maxMarginX = nextTarget.position.x + 0.75;
         const section = &self.section;
-        if (section.y > minMarginY and
-            section.y < maxMarginY and
-            section.x > minMarginX and
-            section.x < maxMarginX)
+        if (section.y > (nextTarget.position.y - 0.75) and
+            section.y < (nextTarget.position.y + 0.75) and
+            section.x > (nextTarget.position.x - 0.75) and
+            section.x < (nextTarget.position.x + 0.75))
         {
             self.section.x = nextTarget.position.x;
             self.section.y = nextTarget.position.y;
-            self.direction = self.targets[0].nextDirection;
+            self.direction = nextTarget.nextDirection;
             self.queuShiftLeft();
-        }
-        if (self.queuPosition != 0) {
-            self.queuPosition = self.queuPosition - 1;
+            if (self.queuPosition != 0) {
+                self.queuPosition = self.queuPosition - 1;
+            }
         }
     }
+
     pub fn pushNewTarget(self: *Section, direction: Direction, target: *Rectangle) void {
-        if (self.queuPosition == (self.targets.len - 1)) {
+        if (self.queuPosition == (self.targets.len)) {
             return;
         }
         self.targets[self.queuPosition] = Target{
@@ -75,6 +73,7 @@ const Section = struct {
         };
         self.queuPosition += 1;
     }
+
     pub fn move(self: *Section, speed: f16) void {
         switch (self.direction) {
             .up => {
@@ -107,6 +106,7 @@ const Section = struct {
             },
         }
     }
+
     pub fn init(rec: Rectangle) Section {
         return Section{
             .section = rec,
@@ -116,22 +116,12 @@ const Section = struct {
 };
 
 pub const Snake = struct {
-    const headColour = Colour{
-        .r = 234,
-        .g = 104,
-        .b = 71,
-        .a = 255,
-    };
-    const bodyColour = Colour{
-        .r = 255,
-        .g = 162,
-        .b = 0,
-        .a = 255,
-    };
-
+    const headColour = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
+    const bodyColour = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
     pub const sectionSize = 10;
     const maxSize = (Global.screenWidth / Snake.sectionSize) * (Global.screenHeight / Snake.sectionSize);
     const sectionGap = 1.25;
+
     body: [maxSize]Section = undefined,
     head: Rectangle = Rectangle{
         .x = Global.screenWidth / 2,
@@ -139,7 +129,7 @@ pub const Snake = struct {
         .width = sectionSize,
         .height = sectionSize,
     },
-    length: u16 = 30,
+    length: u16 = 2,
     direction: Direction = Direction.left,
     speed: f16 = 0.8,
 
@@ -148,7 +138,7 @@ pub const Snake = struct {
             if (idx == self.length) {
                 return;
             }
-            bodyPart.*.handleQueue();
+            bodyPart.handleQueue();
         }
     }
 
@@ -165,8 +155,8 @@ pub const Snake = struct {
 
     pub fn Init() Snake {
         var snake = Snake{};
-
         var prevSection = &snake.head;
+
         for (&snake.body, 0..) |*section, idx| {
             if (idx == snake.length) {
                 break;
@@ -181,12 +171,10 @@ pub const Snake = struct {
             });
             prevSection = &snake.body[idx].section;
         }
-
         return snake;
     }
 
     pub fn handleKeyPress(self: *Snake, key: Keys) void {
-        // var previousSectionDirection: Direction = undefined;
         switch (key) {
             Keys.key_up, Keys.key_k => {
                 switch (self.direction) {
@@ -246,21 +234,21 @@ pub const Snake = struct {
             },
             else => {},
         }
-        switch (key) {
-            Keys.key_left,
-            Keys.key_up,
-            Keys.key_down,
-            Keys.key_right,
-            Keys.key_h,
-            Keys.key_j,
-            Keys.key_k,
-            Keys.key_l,
-            => {
-                if (runMode == OptimizedMode.Debug) {
+        if (runMode == OptimizedMode.Debug) {
+            switch (key) {
+                Keys.key_left,
+                Keys.key_up,
+                Keys.key_down,
+                Keys.key_right,
+                Keys.key_h,
+                Keys.key_j,
+                Keys.key_k,
+                Keys.key_l,
+                => {
                     self.printStatus();
-                }
-            },
-            else => {},
+                },
+                else => {},
+            }
         }
     }
 
@@ -302,27 +290,15 @@ pub const Snake = struct {
             switch (self.direction) {
                 .up => {
                     bodyPart.move(self.speed);
-                    // if (bodyPart.section.y < 0) {
-                    //     bodyPart.section.y = Global.screenHeight;
-                    // }
                 },
                 .down => {
                     bodyPart.move(self.speed);
-                    // if (bodyPart.section.y > Global.screenHeight) {
-                    //     bodyPart.section.y = 0;
-                    // }
                 },
                 .left => {
                     bodyPart.move(self.speed);
-                    // if (bodyPart.section.x < 0.0) {
-                    //     bodyPart.section.x = Global.screenWidth;
-                    // }
                 },
                 .right => {
                     bodyPart.move(self.speed);
-                    // if (bodyPart.section.x > Global.screenWidth) {
-                    //     bodyPart.section.x = 0;
-                    // }
                 },
             }
         }
