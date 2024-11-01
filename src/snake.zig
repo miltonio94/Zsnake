@@ -8,6 +8,7 @@ const print = std.debug.print;
 const Rectangle = raylib.Rectangle;
 const Colour = raylib.Color;
 const Keys = raylib.KeyboardKey;
+const Fruit = @import("fruit.zig").Fruit;
 
 const Direction = enum { up, down, left, right };
 
@@ -172,6 +173,22 @@ pub const Snake = struct {
             prevSection = &snake.body[idx].section;
         }
         return snake;
+    }
+
+    pub fn fruitOverlaping(self: Snake, fruit: *Fruit) bool {
+        for (&self.body, 0..) |*section, idx| {
+            if (idx == self.length) {
+                break;
+            }
+            if (section.section.y >= fruit.fruit.y and
+                section.section.y <= fruit.fruit.y + fruit.dimension and
+                section.section.x >= fruit.fruit.x and
+                section.section.x <= fruit.fruit.x)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     pub fn handleKeyPress(self: *Snake, key: Keys) void {
