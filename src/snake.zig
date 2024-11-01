@@ -164,7 +164,7 @@ pub const Snake = struct {
         }
     }
 
-    pub fn init() Snake {
+    pub fn Init() Snake {
         var snake = Snake{};
 
         var prevSection = &snake.head;

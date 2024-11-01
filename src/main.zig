@@ -11,7 +11,7 @@ pub fn main() !void {
     raylib.initWindow(Global.screenWidth, Global.screenHeight, "Znake");
     defer raylib.closeWindow();
 
-    var snake = Snake.init();
+    var snake = Snake.Init();
 
     raylib.setTargetFPS(144);
 
