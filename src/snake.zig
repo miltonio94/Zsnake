@@ -8,6 +8,7 @@ const print = std.debug.print;
 const Rectangle = raylib.Rectangle;
 const Colour = raylib.Color;
 const Keys = raylib.KeyboardKey;
+const Fruit = @import("fruit.zig").Fruit;
 
 const Direction = enum { up, down, left, right };
 
@@ -107,7 +108,7 @@ const Section = struct {
         }
     }
 
-    pub fn init(rec: Rectangle) Section {
+    pub fn Init(rec: Rectangle) Section {
         return Section{
             .section = rec,
             .queuPosition = 0,
@@ -142,7 +143,7 @@ pub const Snake = struct {
         }
     }
 
-    pub fn printStatus(self: Snake) void {
+    pub fn printStatus(self: *Snake) void {
         print("Snake.length: {d}\t Snake.head.x: {d}\t Snake.head.y: {d}\t Snake.direction: {any}\n", .{ self.length, self.head.x, self.head.y, self.direction });
         for (&self.body, 0..) |*value, i| {
             if (i == self.length) {
@@ -161,7 +162,7 @@ pub const Snake = struct {
             if (idx == snake.length) {
                 break;
             }
-            section.* = Section.init(Rectangle{
+            section.* = Section.Init(Rectangle{
                 .x = prevSection.*.x +
                     @as(f32, @floatFromInt(sectionSize)) +
                     sectionGap,
@@ -172,6 +173,22 @@ pub const Snake = struct {
             prevSection = &snake.body[idx].section;
         }
         return snake;
+    }
+
+    pub fn fruitOverlaping(self: Snake, fruit: *Fruit) bool {
+        for (&self.body, 0..) |*section, idx| {
+            if (idx == self.length) {
+                break;
+            }
+            if (section.section.y >= fruit.fruit.y and
+                section.section.y <= fruit.fruit.y + fruit.dimension and
+                section.section.x >= fruit.fruit.x and
+                section.section.x <= fruit.fruit.x)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     pub fn handleKeyPress(self: *Snake, key: Keys) void {

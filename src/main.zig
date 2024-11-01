@@ -1,6 +1,7 @@
 const std = @import("std");
 const raylib = @import("raylib");
 const Snake = @import("snake.zig").Snake;
+const Fruit = @import("fruit.zig").Fruit;
 const Global = @import("global.zig");
 
 const Colour = raylib.Color;
@@ -12,12 +13,17 @@ pub fn main() !void {
     defer raylib.closeWindow();
 
     var snake = Snake.Init();
+    var fruit = Fruit.Init();
 
     raylib.setTargetFPS(144);
 
     while (!raylib.windowShouldClose()) {
         raylib.drawFPS(5, 5);
         const pressedKey = raylib.getKeyPressed();
+
+        while (snake.fruitOverlaping(&fruit)) {
+            fruit.respawn();
+        }
 
         snake.handleKeyPress(pressedKey);
         snake.handleTargetQueue();
@@ -28,6 +34,7 @@ pub fn main() !void {
 
         raylib.clearBackground(backgroundColour);
 
+        fruit.draw();
         snake.draw();
     }
 }
