@@ -4,6 +4,8 @@ const Global = @import("global.zig");
 const Colour = raylib.Color;
 
 pub const Fruit = struct {
+    const colour = Colour{ .r = 217, .g = 67, .b = 168, .a = 255 };
+
     dimension: f32 = 5.0,
     fruit: raylib.Rectangle,
     visible: bool,
@@ -30,7 +32,7 @@ pub const Fruit = struct {
 
     pub fn draw(self: *Fruit) void {
         if (self.visible) {
-            raylib.drawRectangleRec(self.fruit, Colour.red);
+            raylib.drawRectangleRec(self.fruit, colour);
         }
     }
 };
