@@ -142,7 +142,7 @@ pub const Snake = struct {
         }
     }
 
-    pub fn printStatus(self: Snake) void {
+    pub fn printStatus(self: *Snake) void {
         print("Snake.length: {d}\t Snake.head.x: {d}\t Snake.head.y: {d}\t Snake.direction: {any}\n", .{ self.length, self.head.x, self.head.y, self.direction });
         for (&self.body, 0..) |*value, i| {
             if (i == self.length) {

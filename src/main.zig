@@ -1,6 +1,7 @@
 const std = @import("std");
 const raylib = @import("raylib");
 const Snake = @import("snake.zig").Snake;
+const Fruit = @import("fruit.zig").Fruit;
 const Global = @import("global.zig");
 
 const Colour = raylib.Color;
