@@ -8,7 +8,6 @@ const print = std.debug.print;
 const Rectangle = raylib.Rectangle;
 const Colour = raylib.Color;
 const Keys = raylib.KeyboardKey;
-// TODO: this should not be replicated here
 
 const Direction = enum { up, down, left, right };
 
