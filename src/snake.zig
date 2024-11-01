@@ -108,7 +108,7 @@ const Section = struct {
         }
     }
 
-    pub fn init(rec: Rectangle) Section {
+    pub fn Init(rec: Rectangle) Section {
         return Section{
             .section = rec,
             .queuPosition = 0,
@@ -162,7 +162,7 @@ pub const Snake = struct {
             if (idx == snake.length) {
                 break;
             }
-            section.* = Section.init(Rectangle{
+            section.* = Section.Init(Rectangle{
                 .x = prevSection.*.x +
                     @as(f32, @floatFromInt(sectionSize)) +
                     sectionGap,
