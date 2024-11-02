@@ -3,7 +3,13 @@ const raylib = @import("raylib");
 const Snake = @import("snake.zig").Snake;
 const Fruit = @import("fruit.zig").Fruit;
 const Global = @import("global.zig");
+const builtin = @import("builtin");
+
+const runMode = builtin.mode;
 const Colour = raylib.Color;
+const OptimizedMode = std.builtin.OptimizeMode;
+const Keys = raylib.KeyboardKey;
+const print = std.debug.print;
 
 pub const World = struct {
     const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
@@ -32,12 +38,36 @@ pub const World = struct {
         raylib.setTargetFPS(144);
 
         while (!raylib.windowShouldClose()) {
-            raylib.drawFPS(5, 5);
+            if (runMode == OptimizedMode.Debug) {
+                raylib.drawFPS(5, 5);
+            }
             const pressedKey = raylib.getKeyPressed();
 
-            self.snake.handleKeyPress(pressedKey);
-            self.snake.handleTargetQueue();
-            self.snake.move();
+            switch (pressedKey) {
+                Keys.key_p => {
+                    if (self.state == State.play) {
+                        print("p pressed\n", .{});
+                        self.state = State.paused;
+                        print("state: {any}\n", .{self.state});
+                    } else {
+                        print("p pressed - play\n", .{});
+                        self.state = State.play;
+                        print("state: {any}\n", .{self.state});
+                    }
+                },
+                else => {},
+            }
+
+            switch (self.state) {
+                State.play => {
+                    self.snake.handleKeyPress(pressedKey);
+                    self.snake.handleTargetQueue();
+                    self.snake.move();
+                },
+                State.paused => {
+                    //
+                },
+            }
 
             raylib.beginDrawing();
             defer raylib.endDrawing();

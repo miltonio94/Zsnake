@@ -1,14 +1,15 @@
 const std = @import("std");
 const raylib = @import("raylib");
 const Global = @import("global.zig");
-
 const runMode = @import("builtin").mode;
+const Fruit = @import("fruit.zig").Fruit;
+
 const OptimizedMode = std.builtin.OptimizeMode;
-const print = std.debug.print;
 const Rectangle = raylib.Rectangle;
 const Colour = raylib.Color;
 const Keys = raylib.KeyboardKey;
-const Fruit = @import("fruit.zig").Fruit;
+
+const print = std.debug.print;
 
 const Direction = enum { up, down, left, right };
 
