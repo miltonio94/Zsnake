@@ -4,24 +4,51 @@ const Snake = @import("snake.zig").Snake;
 const Fruit = @import("fruit.zig").Fruit;
 const Global = @import("global.zig");
 const builtin = @import("builtin");
+const Font = raylib.Font;
+const currentPath = std.fs.cwd();
 
 const runMode = builtin.mode;
 const Colour = raylib.Color;
 const OptimizedMode = std.builtin.OptimizeMode;
 const Keys = raylib.KeyboardKey;
+const Rectangle = raylib.Rectangle;
 const print = std.debug.print;
+const BitPotionFont = @embedFile("./assets/BitPotion.ttf");
 
 pub const World = struct {
     const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
+    const pauseColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 188 };
+    const pausedFontColour = Colour{ .r = 93, .g = 178, .b = 248, .a = 255 };
+    const rectOverlay = Rectangle{
+        .x = 0,
+        .y = 0,
+        .width = Global.screenWidth,
+        .height = Global.screenHeight,
+    };
+    const pausedTxt = "Paused";
+    const fontSize = 24;
+    const fontSpacing = 2.0;
+    var font: Font = undefined;
+
     state: State,
     snake: Snake,
     fruit: Fruit,
+    fontPos: raylib.Vector2 = raylib.Vector2{
+        .x = Global.screenWidth / 2,
+        .y = Global.screenHeight / 2,
+    },
 
     pub fn Init() World {
+        font = Font.fromMemory("ttf", BitPotionFont, 24, null);
+
         var world = World{
             .state = .play,
             .snake = Snake.Init(),
             .fruit = Fruit.Init(),
+            .fontPos = raylib.Vector2{
+                .x = Global.screenWidth / 2 - 70.0,
+                .y = 100.0,
+            },
         };
 
         while (world.snake.fruitOverlaping(&world.fruit)) {
@@ -31,6 +58,18 @@ pub const World = struct {
         return world;
     }
 
+    fn pauseOverlay(self: *World) void {
+        raylib.drawRectangleRec(rectOverlay, pauseColour);
+        raylib.drawTextEx(
+            font,
+            pausedTxt,
+            self.fontPos,
+            fontSize,
+            fontSpacing,
+            pausedFontColour,
+        );
+    }
+
     pub fn run(self: *World) void {
         raylib.initWindow(Global.screenWidth, Global.screenHeight, "Znake");
         defer raylib.closeWindow();
@@ -38,36 +77,37 @@ pub const World = struct {
         raylib.setTargetFPS(144);
 
         while (!raylib.windowShouldClose()) {
-            if (runMode == OptimizedMode.Debug) {
-                raylib.drawFPS(5, 5);
-            }
+            // if (runMode == OptimizedMode.Debug) {
+            raylib.drawFPS(5, 5);
+            // }
             const pressedKey = raylib.getKeyPressed();
 
             switch (pressedKey) {
                 Keys.key_p => {
                     if (self.state == State.play) {
-                        print("p pressed\n", .{});
                         self.state = State.paused;
-                        print("state: {any}\n", .{self.state});
                     } else {
-                        print("p pressed - play\n", .{});
                         self.state = State.play;
-                        print("state: {any}\n", .{self.state});
                     }
                 },
                 else => {},
             }
 
-            switch (self.state) {
-                State.play => {
-                    self.snake.handleKeyPress(pressedKey);
-                    self.snake.handleTargetQueue();
-                    self.snake.move();
-                },
-                State.paused => {
-                    //
-                },
+            if (self.state == State.play) {
+                self.snake.handleKeyPress(pressedKey);
+                self.snake.handleTargetQueue();
+                self.snake.move();
             }
+            // switch (self.state) {
+            //     State.play => {
+            //         self.snake.handleKeyPress(pressedKey);
+            //         self.snake.handleTargetQueue();
+            //         self.snake.move();
+            //     },
+            //     State.paused => {
+            //         //
+            //     },
+            // }
 
             raylib.beginDrawing();
             defer raylib.endDrawing();
@@ -76,6 +116,10 @@ pub const World = struct {
 
             self.fruit.draw();
             self.snake.draw();
+
+            if (self.state == .paused) {
+                self.pauseOverlay();
+            }
         }
     }
 };
