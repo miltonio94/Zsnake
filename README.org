@@ -1,3 +1,36 @@
 #+title: Zsnake
 #+description: Readme
 #+author: M.
+
+* Table of Content :toc:
+- [[#description][Description]]
+- [[#building-the-project][Building the project]]
+- [[#pending-tasks][Pending tasks]]
+
+* Description
+Wanting to learn about game development I decided to recreate a classic, snake, using Zig and Raylib.
+In this project my focus is learning more about Zig's features and the functionality provided by Raylib.
+In Znake, the snake does not traverse the plain in a ridgid grid manner, but rather in a smooth manner.
+* Building the project
+ You need to have Zig installed on your system, but as long as you have it installed all you need to do to build theproject is run
+ #+begin_src bash
+ zig build
+ #+end_src
+
+
+* Pending tasks :todo:
+*** TODO Figure out how to have different GL targets other then Wayland
+*** TODO Create menu sytem
+*** TODO Create highscore system
+*** TODO fruit eating
+*** TODO Skin the snake with a sprite
+*** TODO Skin the fruit with sprite
+*** TODO Explore zoom feature
+*** TODO Make movement frame independent
+- [[https://thatgamesguy.co.uk/cpp-game-dev-3/][Framerate independent movement article]]
+*** TODO Explore different fruits doing different things
+- Speed fruit
+- Growth fruit
+- Shrink fruit
+- Slow fruit
+*** TODO Grass tiles for the background
