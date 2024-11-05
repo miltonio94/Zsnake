@@ -38,12 +38,13 @@ pub const World = struct {
     fba: FixedBufferAllocator = undefined,
     allocator: std.mem.Allocator = undefined,
     memBuffer: []u8,
-    rectBuffer: []Rectangle = undefined,
+    recBuffer: []Rectangle = undefined,
     sectionBuffer: []snake.Section = undefined,
     targetBuffer: []snake.Target = undefined,
-    directionBuffer: []snake.Target = undefined,
+    directionBuffer: []snake.Direction = undefined,
     head: snake.Head = undefined,
 
+    sectionLength: usize = 2,
     state: State,
     fontPos: raylib.Vector2 = raylib.Vector2{
         .x = Global.screenWidth / 2,
@@ -69,23 +70,41 @@ pub const World = struct {
 
         world.fba = FixedBufferAllocator.init(world.memBuffer);
         world.allocator = world.fba.allocator();
-        world.rectBuffer = try world.allocator.alloc(Rectangle, sectionMaxSize);
+        world.recBuffer = try world.allocator.alloc(Rectangle, sectionMaxSize);
         world.sectionBuffer = try world.allocator.alloc(snake.Section, sectionMaxSize);
         world.targetBuffer = try world.allocator.alloc(snake.Target, sectionMaxSize * 50);
+        world.directionBuffer = try world.allocator.alloc(snake.Direction, sectionMaxSize);
+
+        world.head = snake.Head{
+            .recIdx = 0,
+            .directionIdx = 0,
+        };
+        world.recBuffer[world.head.recIdx] = Rectangle{
+            .x = Global.screenWidth / 2,
+            .y = Global.screenHeight / 2,
+            .width = snake.startingSize,
+            .height = snake.startingSize,
+        };
+        world.directionBuffer[world.head.directionIdx] = snake.Direction.left;
 
         var i: usize = 0;
-        while (i < sectionMaxSize) : (i += 1) {
-            world.rectBuffer[i] = Rectangle{
-                .x = 0,
-                .y = 0,
+        var prevRec = &world.recBuffer[world.head.recIdx];
+        while (i < world.sectionLength) : (i += 1) {
+            world.sectionBuffer[i] = snake.Section{
+                .recIdx = i + world.head.recIdx,
+                .directionIdx = i + world.head.directionIdx,
+                .targetPoolStart = i * 50,
+                .targetPoolEnd = i * 50 + 50,
+            };
+            world.recBuffer[world.sectionBuffer[i].recIdx] = Rectangle{
+                .x = prevRec.x + snake.startingSize,
+                .y = prevRec.y,
                 .width = snake.startingSize,
                 .height = snake.startingSize,
             };
-        }
 
-        // while (world.snake.fruitOverlaping(&world.fruit)) {
-        //     world.fruit.respawn();
-        // }
+            prevRec = &world.recBuffer[world.sectionBuffer[i].recIdx];
+        }
 
         return world;
     }
