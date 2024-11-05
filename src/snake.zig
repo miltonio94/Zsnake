@@ -49,14 +49,16 @@ const Section = struct {
 
     pub fn handleQueue(self: *Section) void {
         const nextTarget = self.targets[0];
+        const gapX: f32 = 0; // if (nextTarget.nextDirection == .right) -0.25 else if (nextTarget.nextDirection == .left) 0.25 else 0;
+        const gapY: f32 = 0; // if (nextTarget.nextDirection == .down) -0.25 else if (nextTarget.nextDirection == .up) 0.25 else 0;
         const section = &self.section;
-        if (section.y > (nextTarget.position.y - 0.75) and
-            section.y < (nextTarget.position.y + 0.75) and
-            section.x > (nextTarget.position.x - 0.75) and
-            section.x < (nextTarget.position.x + 0.75))
+        if (section.y > (nextTarget.position.y - 1.0) and
+            section.y < (nextTarget.position.y + 1.0) and
+            section.x > (nextTarget.position.x - 1.0) and
+            section.x < (nextTarget.position.x + 1.0))
         {
-            self.section.x = nextTarget.position.x;
-            self.section.y = nextTarget.position.y;
+            self.section.x = nextTarget.position.x + gapX;
+            self.section.y = nextTarget.position.y + gapY;
             self.direction = nextTarget.nextDirection;
             self.queuShiftLeft();
             if (self.queuPosition != 0) {
@@ -76,7 +78,7 @@ const Section = struct {
         self.queuPosition += 1;
     }
 
-    pub fn move(self: *Section, speed: f16) void {
+    pub fn move(self: *Section, speed: f32) void {
         switch (self.direction) {
             .up => {
                 if (self.section.y < 0) {
@@ -120,9 +122,10 @@ const Section = struct {
 pub const Snake = struct {
     const headColour = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
     const bodyColour = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
-    pub const sectionSize = 10;
-    const maxSize = (Global.screenWidth / Snake.sectionSize) * (Global.screenHeight / Snake.sectionSize);
-    const sectionGap = 1.25;
+    pub const sectionSize: f32 = 40.0;
+    pub const smallestSectionSize = 10;
+    const maxSize = (Global.screenWidth / smallestSectionSize) * (Global.screenHeight / smallestSectionSize);
+    const sectionGap: f32 = 0.0;
 
     body: [maxSize]Section = undefined,
     head: Rectangle = Rectangle{
@@ -133,7 +136,7 @@ pub const Snake = struct {
     },
     length: u16 = 2,
     direction: Direction = Direction.left,
-    speed: f16 = 0.8,
+    speed: f32 = 10.0,
 
     pub fn handleTargetQueue(self: *Snake) void {
         for (&self.body, 0..) |*bodyPart, idx| {
@@ -164,10 +167,10 @@ pub const Snake = struct {
                 break;
             }
             section.* = Section.Init(Rectangle{
-                .x = prevSection.*.x +
-                    @as(f32, @floatFromInt(sectionSize)) +
+                .x = prevSection.x +
+                    sectionSize +
                     sectionGap,
-                .y = prevSection.*.y,
+                .y = prevSection.y,
                 .width = sectionSize,
                 .height = sectionSize,
             });
@@ -270,35 +273,35 @@ pub const Snake = struct {
         }
     }
 
-    pub fn move(self: *Snake) void {
+    pub fn move(self: *Snake, dt: f32) void {
         switch (self.direction) {
             .up => {
                 if (self.head.y < 0) {
                     self.head.y = Global.screenHeight;
                     return;
                 }
-                self.head.y = self.head.y - self.speed;
+                self.head.y = self.head.y - self.speed * dt;
             },
             .down => {
                 if (self.head.y > Global.screenHeight) {
                     self.head.y = 0;
                     return;
                 }
-                self.head.y = self.head.y + self.speed;
+                self.head.y = self.head.y + self.speed * dt;
             },
             .left => {
                 if (self.head.x < 0.0) {
                     self.head.x = Global.screenWidth;
                     return;
                 }
-                self.head.x = self.head.x - self.speed;
+                self.head.x = self.head.x - self.speed * dt;
             },
             .right => {
                 if (self.head.x > Global.screenWidth) {
                     self.head.x = 0;
                     return;
                 }
-                self.head.x = self.head.x + self.speed;
+                self.head.x = self.head.x + self.speed * dt;
             },
         }
         for (&self.*.body, 0..) |*bodyPart, idx| {
@@ -307,16 +310,16 @@ pub const Snake = struct {
             }
             switch (self.direction) {
                 .up => {
-                    bodyPart.move(self.speed);
+                    bodyPart.move(self.speed * dt);
                 },
                 .down => {
-                    bodyPart.move(self.speed);
+                    bodyPart.move(self.speed * dt);
                 },
                 .left => {
-                    bodyPart.move(self.speed);
+                    bodyPart.move(self.speed * dt);
                 },
                 .right => {
-                    bodyPart.move(self.speed);
+                    bodyPart.move(self.speed * dt);
                 },
             }
         }

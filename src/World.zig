@@ -30,6 +30,7 @@ pub const World = struct {
     const fontSpacing = 2.0;
     var font: Font = undefined;
 
+    dt: f32 = 0,
     state: State,
     snake: Snake,
     fruit: Fruit,
@@ -49,6 +50,7 @@ pub const World = struct {
                 .x = Global.screenWidth / 2 - 70.0,
                 .y = 100.0,
             },
+            .dt = raylib.getFrameTime(),
         };
 
         while (world.snake.fruitOverlaping(&world.fruit)) {
@@ -77,6 +79,7 @@ pub const World = struct {
         raylib.setTargetFPS(144);
 
         while (!raylib.windowShouldClose()) {
+            self.dt = raylib.getFrameTime();
             // if (runMode == OptimizedMode.Debug) {
             raylib.drawFPS(5, 5);
             // }
@@ -96,7 +99,7 @@ pub const World = struct {
             if (self.state == State.play) {
                 self.snake.handleKeyPress(pressedKey);
                 self.snake.handleTargetQueue();
-                self.snake.move();
+                self.snake.move(self.dt);
             }
             // switch (self.state) {
             //     State.play => {
