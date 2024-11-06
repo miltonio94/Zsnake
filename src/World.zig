@@ -35,6 +35,7 @@ pub const World = struct {
     const sectionMaxSize = 10000;
 
     dt: f32 = 0,
+    movementSpeed: f32 = 100,
     fba: FixedBufferAllocator = undefined,
     allocator: std.mem.Allocator = undefined,
     memBuffer: []u8,
@@ -44,7 +45,9 @@ pub const World = struct {
     directionBuffer: []snake.Direction = undefined,
     head: snake.Head = undefined,
 
-    sectionLength: usize = 2,
+    sectionBufferLength: usize = 2,
+    recBufferLength: usize = 0,
+    directionBufferLength: usize = 0,
     state: State,
     fontPos: raylib.Vector2 = raylib.Vector2{
         .x = Global.screenWidth / 2,
@@ -58,7 +61,7 @@ pub const World = struct {
     pub fn init() !World {
         font = Font.fromMemory("ttf", BitPotionFont, 24, null);
 
-        var world = World{
+        var self = World{
             .state = .play,
             .fontPos = raylib.Vector2{
                 .x = Global.screenWidth / 2 - 70.0,
@@ -68,45 +71,58 @@ pub const World = struct {
             .memBuffer = try pager.alloc(u8, 100 * 1024 * 1024),
         };
 
-        world.fba = FixedBufferAllocator.init(world.memBuffer);
-        world.allocator = world.fba.allocator();
-        world.recBuffer = try world.allocator.alloc(Rectangle, sectionMaxSize);
-        world.sectionBuffer = try world.allocator.alloc(snake.Section, sectionMaxSize);
-        world.targetBuffer = try world.allocator.alloc(snake.Target, sectionMaxSize * 50);
-        world.directionBuffer = try world.allocator.alloc(snake.Direction, sectionMaxSize);
+        self.fba = FixedBufferAllocator.init(self.memBuffer);
+        self.allocator = self.fba.allocator();
+        self.recBuffer = try self.allocator.alloc(Rectangle, sectionMaxSize);
+        self.sectionBuffer = try self.allocator.alloc(snake.Section, sectionMaxSize);
+        self.targetBuffer = try self.allocator.alloc(snake.Target, sectionMaxSize * 50);
+        self.directionBuffer = try self.allocator.alloc(snake.Direction, sectionMaxSize);
 
-        world.head = snake.Head{
+        self.head = snake.Head{
             .recIdx = 0,
             .directionIdx = 0,
         };
-        world.recBuffer[world.head.recIdx] = Rectangle{
-            .x = Global.screenWidth / 2,
+
+        self.recBuffer[0] = Rectangle{
+            .x = (Global.screenWidth / 2),
             .y = Global.screenHeight / 2,
             .width = snake.startingSize,
             .height = snake.startingSize,
         };
-        world.directionBuffer[world.head.directionIdx] = snake.Direction.left;
+        self.recBuffer[1] = Rectangle{
+            .x = (Global.screenWidth / 2) + snake.startingSize,
+            .y = Global.screenHeight / 2,
+            .width = snake.startingSize,
+            .height = snake.startingSize,
+        };
+        self.recBuffer[2] = Rectangle{
+            .x = (Global.screenWidth / 2) + (snake.startingSize * 2),
+            .y = Global.screenHeight / 2,
+            .width = snake.startingSize,
+            .height = snake.startingSize,
+        };
 
-        var i: usize = 0;
-        var prevRec = &world.recBuffer[world.head.recIdx];
-        while (i < world.sectionLength) : (i += 1) {
-            world.sectionBuffer[i] = snake.Section{
-                .recIdx = i + world.head.recIdx,
-                .directionIdx = i + world.head.directionIdx,
-                .targetPoolStart = i * 50,
-                .targetPoolEnd = i * 50 + 50,
-            };
-            world.recBuffer[world.sectionBuffer[i].recIdx] = Rectangle{
-                .x = prevRec.x + snake.startingSize,
-                .y = prevRec.y,
-                .width = snake.startingSize,
-                .height = snake.startingSize,
-            };
+        self.sectionBuffer[0] = snake.Section{
+            .recIdx = 1,
+            .directionIdx = 1,
+            .targetPoolStart = 0,
+            .targetPoolEnd = 49,
+        };
+        self.sectionBuffer[1] = snake.Section{
+            .recIdx = 2,
+            .directionIdx = 2,
+            .targetPoolStart = 50,
+            .targetPoolEnd = 99,
+        };
 
-            prevRec = &world.recBuffer[world.sectionBuffer[i].recIdx];
-        }
+        self.directionBuffer[0] = snake.Direction.left;
+        self.directionBuffer[1] = snake.Direction.left;
+        self.directionBuffer[2] = snake.Direction.left;
 
-        return world;
+        self.recBufferLength = 3;
+        self.directionBufferLength = 3;
+
+        return self;
     }
 
     fn pauseOverlay(self: *World) void {
@@ -121,58 +137,129 @@ pub const World = struct {
         );
     }
 
+    fn moveEntities(self: *World) void {
+        if (self.state != State.play) return;
+        var i: usize = 0;
+
+        moveRec(
+            &self.recBuffer[self.head.recIdx],
+            switch (self.directionBuffer[self.head.directionIdx]) {
+                .left => -(self.movementSpeed * self.dt),
+                .right => (self.movementSpeed * self.dt),
+                else => 0,
+            },
+            switch (self.directionBuffer[self.head.directionIdx]) {
+                .up => -(self.movementSpeed * self.dt),
+                .down => (self.movementSpeed * self.dt),
+                else => 0,
+            },
+        );
+
+        while (i < self.sectionBufferLength) : (i += 1) {
+            moveRec(
+                &self.recBuffer[self.sectionBuffer[i].recIdx],
+                switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
+                    .left => -(self.movementSpeed * self.dt),
+                    .right => (self.movementSpeed * self.dt),
+                    else => 0,
+                },
+                switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
+                    .up => -(self.movementSpeed * self.dt),
+                    .down => (self.movementSpeed * self.dt),
+                    else => 0,
+                },
+            );
+        }
+    }
+
+    fn updateEntitiesDirection(self: *World, direction: snake.Direction) void {
+        self.directionBuffer[self.head.directionIdx] = direction;
+    }
+
     pub fn run(self: *World) void {
         raylib.initWindow(Global.screenWidth, Global.screenHeight, "Znake");
         defer raylib.closeWindow();
 
-        raylib.setTargetFPS(144);
+        raylib.setTargetFPS(200);
 
         while (!raylib.windowShouldClose()) {
             self.dt = raylib.getFrameTime();
-            // if (runMode == OptimizedMode.Debug) {
-            raylib.drawFPS(5, 5);
-            // }
-            const pressedKey = raylib.getKeyPressed();
+            const command = Command.keyToCommand(raylib.getKeyPressed());
 
-            switch (pressedKey) {
-                Keys.key_p => {
+            switch (command) {
+                .pause_toggle => {
                     if (self.state == State.play) {
                         self.state = State.paused;
                     } else {
                         self.state = State.play;
                     }
                 },
+                .direction => |direction| {
+                    if (self.state == State.play) {
+                        self.updateEntitiesDirection(direction);
+                    }
+                },
                 else => {},
             }
 
             if (self.state == State.play) {
-                // self.snake.handleKeyPress(pressedKey);
-                // self.snake.handleTargetQueue();
-                // self.snake.move(self.dt);
+                self.moveEntities();
             }
-            // switch (self.state) {
-            //     State.play => {
-            //         self.snake.handleKeyPress(pressedKey);
-            //         self.snake.handleTargetQueue();
-            //         self.snake.move();
-            //     },
-            //     State.paused => {
-            //         //
-            //     },
-            // }
 
             raylib.beginDrawing();
             defer raylib.endDrawing();
 
             raylib.clearBackground(backgroundColour);
 
-            // self.fruit.draw();
-            // self.snake.draw();
+            self.render();
 
             if (self.state == .paused) {
                 self.pauseOverlay();
             }
+
+            if (runMode == OptimizedMode.Debug) {
+                raylib.drawFPS(5, 5);
+            }
         }
+    }
+
+    fn render(self: *World) void {
+        var i: usize = 0;
+
+        while (i < self.sectionBufferLength) : (i += 1) {
+            raylib.drawRectangleRounded(
+                self.recBuffer[self.sectionBuffer[i].recIdx],
+                0.45,
+                500,
+                snake.bodyColour,
+            );
+        }
+
+        raylib.drawRectangleRounded(self.recBuffer[self.head.recIdx], 0.45, 500, snake.headColour);
+    }
+};
+
+const Command_ = enum {
+    direction,
+    pause_toggle,
+    no_op,
+};
+
+const Command = union(Command_) {
+    direction: snake.Direction,
+    pause_toggle,
+    no_op,
+
+    pub fn keyToCommand(key: Keys) Command {
+        switch (key) {
+            Keys.key_p => return .pause_toggle,
+            Keys.key_up, Keys.key_k => return Command{ .direction = snake.Direction.up },
+            Keys.key_down, Keys.key_j => return Command{ .direction = snake.Direction.down },
+            Keys.key_left, Keys.key_h => return Command{ .direction = snake.Direction.left },
+            Keys.key_right, Keys.key_l => return Command{ .direction = snake.Direction.right },
+            else => return .no_op,
+        }
+        return .no_op;
     }
 };
 
@@ -180,3 +267,24 @@ const State = enum {
     paused,
     play,
 };
+
+inline fn moveRec(rec: *Rectangle, x: f32, y: f32) void {
+    if (rec.x > Global.screenWidth) {
+        rec.x = 0;
+        return;
+    }
+    if (rec.x < 0) {
+        rec.x = Global.screenWidth;
+        return;
+    }
+    if (rec.y > Global.screenHeight) {
+        rec.y = 0;
+        return;
+    }
+    if (rec.y < 0) {
+        rec.y = Global.screenHeight;
+        return;
+    }
+    rec.x += x;
+    rec.y += y;
+}
