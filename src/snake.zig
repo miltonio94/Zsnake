@@ -9,6 +9,7 @@ const OptimizedMode = std.builtin.OptimizeMode;
 const Rectangle = raylib.Rectangle;
 const Colour = raylib.Color;
 const Keys = raylib.KeyboardKey;
+const print = std.debug.print;
 
 pub const startingSize: f32 = 40.0;
 
@@ -85,6 +86,9 @@ pub const Snake = struct {
     }
 
     pub fn update(self: *Snake, direction: utils.Direction) void {
+        if (self.directionBuffer[self.head.directionIdx] == direction or
+            self.directionBuffer[self.head.directionIdx] == direction.opposite()) return;
+
         self.directionBuffer[self.head.directionIdx] = direction;
     }
 
@@ -105,6 +109,8 @@ pub const Snake = struct {
             },
         );
 
+        utils.teleport(&self.recBuffer[self.head.recIdx]);
+
         while (i < self.sectionBufferLength) : (i += 1) {
             utils.moveRec(
                 &self.recBuffer[self.sectionBuffer[i].recIdx],
@@ -119,6 +125,7 @@ pub const Snake = struct {
                     else => 0,
                 },
             );
+            utils.teleport(&self.recBuffer[self.sectionBuffer[i].recIdx]);
         }
     }
 
@@ -138,18 +145,16 @@ pub const Snake = struct {
     }
 };
 
-pub const Head = struct {
+const Head = struct {
     recIdx: usize,
     directionIdx: usize,
 };
 
-pub const Section = struct {
+const Section = struct {
     recIdx: usize,
     directionIdx: usize,
     targetPoolStart: usize,
     targetPoolEnd: usize,
 };
 
-pub const Target = struct { position: utils.Point, nextDirection: utils.Direction };
-
-const print = std.debug.print;
+const Target = struct { position: utils.Point, nextDirection: utils.Direction };
