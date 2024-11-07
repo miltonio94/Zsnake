@@ -90,6 +90,18 @@ pub const Snake = struct {
             self.directionBuffer[self.head.directionIdx] == direction.opposite()) return;
 
         self.directionBuffer[self.head.directionIdx] = direction;
+
+        var i: usize = 0;
+
+        while (i < self.sectionBufferLength) : (i += 1) {
+            self.targetBuffer[self.sectionBuffer[i].targetCurrentIdx] = Target{
+                .nextDirection = direction,
+                .position = utils.Point{
+                    .x = self.recBuffer[self.head.recIdx].x,
+                    .y = self.recBuffer[self.head.recIdx].y,
+                },
+            };
+        }
     }
 
     pub fn move(self: *Snake, dt: f32) void {
@@ -153,6 +165,7 @@ const Head = struct {
 const Section = struct {
     recIdx: usize,
     directionIdx: usize,
+    targetCurrentIdx: usize = 0,
     targetPoolStart: usize,
     targetPoolEnd: usize,
 };
