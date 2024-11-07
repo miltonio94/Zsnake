@@ -13,6 +13,7 @@ pub const Allocator = struct {
     allocator: std.mem.Allocator = undefined,
     memBuffer: []u8,
 
+    // TODO: Pass allocator size to function
     pub fn init() !Allocator {
         var self = Allocator{
             .memBuffer = try pager.alloc(u8, 100 * 1024 * 1024),

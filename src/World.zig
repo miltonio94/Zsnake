@@ -131,7 +131,7 @@ pub const World = struct {
         }
     }
 
-    fn render(self: *World) void {
+    inline fn render(self: *World) void {
         self.snake.render();
     }
 };
