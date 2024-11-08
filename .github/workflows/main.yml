@@ -10,6 +10,5 @@ jobs:
           version: 0.13.0
       - run: sudo apt-get update
       - run: sudo apt-get install --fix-missing libgl1-mesa-dev
-      - run: xvfb-run glxinfo
       - run: zig fetch --save https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz
       - run: zig build
