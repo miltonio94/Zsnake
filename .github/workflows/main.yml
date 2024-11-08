@@ -2,14 +2,18 @@ name: Build and Test Program
 on: [push]
 jobs:
   test:
-    runs-on: ubuntu-bionic
-    name: Build 
+    runs-on: ubuntu-latest
+    name: Build
     steps:
       - uses: actions/checkout@v3
         with:
           version: 0.13.0
       - uses: mlugg/setup-zig@v1
-      - uses: openrndr/setup-opengl@v1.1
-      - run: xvfb-run glxinfo
+      - run: sudo apt-get update
+      - run: sudo apt-get install --fix-missing xorg openbox
+      - run: sudo apt install --fix-missing libxcursor-dev
+      - run: sudo apt install --fix-missing libxrandr-dev
+      - run: sudo apt-get install libx11-dev xserver-xorg-dev xorg-dev
+      - run: sudo apt-get install --fix-missing libgl1-mesa-dev
       - run: zig fetch --save https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz
       - run: zig build
