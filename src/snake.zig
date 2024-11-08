@@ -1,333 +1,222 @@
 const std = @import("std");
 const raylib = @import("raylib");
 const Global = @import("global.zig");
-
 const runMode = @import("builtin").mode;
+const Fruit = @import("fruit.zig").Fruit;
+const utils = @import("utils.zig");
+
 const OptimizedMode = std.builtin.OptimizeMode;
-const print = std.debug.print;
 const Rectangle = raylib.Rectangle;
 const Colour = raylib.Color;
 const Keys = raylib.KeyboardKey;
-const Fruit = @import("fruit.zig").Fruit;
+const print = std.debug.print;
 
-const Direction = enum { up, down, left, right };
-
-const Point = struct { x: f32, y: f32 };
-const Target = struct { position: Point, nextDirection: Direction };
-
-const Section = struct {
-    section: Rectangle,
-    direction: Direction = Direction.left,
-    // NOTE: If this gets too big it will cause a segment fault
-    // needs to be investigated, for now, we will keep 50
-    // TODO: Replace array with deque
-    targets: [50]Target = undefined,
-    queuPosition: usize = 0,
-
-    pub fn printStatus(self: Section) void {
-        print(
-            "\t\tSection.x: {d}\t Section.y: {d}\t Section.queuPosition: {any}\n",
-            .{ self.section.x, self.section.y, self.queuPosition },
-        );
-        for (&self.targets, 0..) |*value, i| {
-            if (i == self.queuPosition) {
-                break;
-            }
-            print("\t\t\tSection.targets[{d}]: {any}\n", .{ i, value });
-        }
-    }
-
-    fn queuShiftLeft(self: *Section) void {
-        for (&self.targets, 0..) |*target, idx| {
-            if (idx == self.queuPosition) {
-                return;
-            }
-            target.* = self.targets[idx + 1];
-        }
-    }
-
-    pub fn handleQueue(self: *Section) void {
-        const nextTarget = self.targets[0];
-        const section = &self.section;
-        if (section.y > (nextTarget.position.y - 0.75) and
-            section.y < (nextTarget.position.y + 0.75) and
-            section.x > (nextTarget.position.x - 0.75) and
-            section.x < (nextTarget.position.x + 0.75))
-        {
-            self.section.x = nextTarget.position.x;
-            self.section.y = nextTarget.position.y;
-            self.direction = nextTarget.nextDirection;
-            self.queuShiftLeft();
-            if (self.queuPosition != 0) {
-                self.queuPosition = self.queuPosition - 1;
-            }
-        }
-    }
-
-    pub fn pushNewTarget(self: *Section, direction: Direction, target: *Rectangle) void {
-        if (self.queuPosition == (self.targets.len)) {
-            return;
-        }
-        self.targets[self.queuPosition] = Target{
-            .nextDirection = direction,
-            .position = Point{ .x = target.x, .y = target.y },
-        };
-        self.queuPosition += 1;
-    }
-
-    pub fn move(self: *Section, speed: f16) void {
-        switch (self.direction) {
-            .up => {
-                if (self.section.y < 0) {
-                    self.section.y = Global.screenHeight;
-                    return;
-                }
-                self.section.y = self.section.y - speed;
-            },
-            .down => {
-                if (self.section.y > Global.screenHeight) {
-                    self.section.y = 0;
-                    return;
-                }
-                self.section.y = self.section.y + speed;
-            },
-            .left => {
-                if (self.section.x < 0.0) {
-                    self.section.x = Global.screenWidth;
-                    return;
-                }
-                self.section.x = self.section.x - speed;
-            },
-            .right => {
-                if (self.section.x > Global.screenWidth) {
-                    self.section.x = 0;
-                    return;
-                }
-                self.section.x = self.section.x + speed;
-            },
-        }
-    }
-
-    pub fn Init(rec: Rectangle) Section {
-        return Section{
-            .section = rec,
-            .queuPosition = 0,
-        };
-    }
-};
+pub const startingSize: f32 = 40.0;
 
 pub const Snake = struct {
+    const sectionMaxSize = 10000;
     const headColour = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
     const bodyColour = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
-    pub const sectionSize = 10;
-    const maxSize = (Global.screenWidth / Snake.sectionSize) * (Global.screenHeight / Snake.sectionSize);
-    const sectionGap = 1.25;
 
-    body: [maxSize]Section = undefined,
-    head: Rectangle = Rectangle{
-        .x = Global.screenWidth / 2,
-        .y = Global.screenHeight / 2,
-        .width = sectionSize,
-        .height = sectionSize,
-    },
-    length: u16 = 2,
-    direction: Direction = Direction.left,
-    speed: f16 = 0.8,
+    movementSpeed: f32 = 100,
 
-    pub fn handleTargetQueue(self: *Snake) void {
-        for (&self.body, 0..) |*bodyPart, idx| {
-            if (idx == self.length) {
-                return;
-            }
-            bodyPart.handleQueue();
+    recBuffer: []Rectangle = undefined,
+    sectionBuffer: []Section = undefined,
+    targetBuffer: []Target = undefined,
+    directionBuffer: []utils.Direction = undefined,
+    head: Head = undefined,
+
+    sectionBufferLength: usize = 2,
+    recBufferLength: usize = 0,
+    directionBufferLength: usize = 0,
+
+    pub fn init(allocator: *utils.Allocator) !Snake {
+        var self = Snake{};
+
+        self.recBuffer = try allocator.alloc(Rectangle, sectionMaxSize);
+        self.sectionBuffer = try allocator.alloc(Section, sectionMaxSize);
+        self.targetBuffer = try allocator.alloc(Target, sectionMaxSize * 50);
+        self.directionBuffer = try allocator.alloc(utils.Direction, sectionMaxSize);
+
+        self.head = Head{
+            .recIdx = 0,
+            .directionIdx = 0,
+        };
+
+        self.recBuffer[0] = Rectangle{
+            .x = (Global.screenWidth / 2),
+            .y = Global.screenHeight / 2,
+            .width = startingSize,
+            .height = startingSize,
+        };
+        self.recBuffer[1] = Rectangle{
+            .x = (Global.screenWidth / 2) + startingSize,
+            .y = Global.screenHeight / 2,
+            .width = startingSize,
+            .height = startingSize,
+        };
+        self.recBuffer[2] = Rectangle{
+            .x = (Global.screenWidth / 2) + (startingSize * 2),
+            .y = Global.screenHeight / 2,
+            .width = startingSize,
+            .height = startingSize,
+        };
+
+        self.sectionBuffer[0] = Section{
+            .recIdx = 1,
+            .directionIdx = 1,
+            .targetPoolStart = 0,
+            .targetPoolEnd = 49,
+        };
+        self.sectionBuffer[1] = Section{
+            .recIdx = 2,
+            .directionIdx = 2,
+            .targetPoolStart = 50,
+            .targetPoolEnd = 99,
+        };
+
+        self.directionBuffer[0] = utils.Direction.left;
+        self.directionBuffer[1] = utils.Direction.left;
+        self.directionBuffer[2] = utils.Direction.left;
+
+        self.recBufferLength = 3;
+        self.directionBufferLength = 3;
+
+        return self;
+    }
+
+    pub fn update(self: *Snake, direction: utils.Direction) void {
+        if (self.directionBuffer[self.head.directionIdx] == direction or
+            self.directionBuffer[self.head.directionIdx] == direction.opposite()) return;
+
+        self.directionBuffer[self.head.directionIdx] = direction;
+
+        var i: usize = 0;
+
+        while (i < self.sectionBufferLength) : (i += 1) {
+            self.targetBuffer[self.sectionBuffer[i].targetCurrentIdx] = Target{
+                .nextDirection = direction,
+                .position = utils.Point{
+                    .x = self.recBuffer[self.head.recIdx].x,
+                    .y = self.recBuffer[self.head.recIdx].y,
+                },
+            };
         }
     }
 
-    pub fn printStatus(self: *Snake) void {
-        print("Snake.length: {d}\t Snake.head.x: {d}\t Snake.head.y: {d}\t Snake.direction: {any}\n", .{ self.length, self.head.x, self.head.y, self.direction });
-        for (&self.body, 0..) |*value, i| {
-            if (i == self.length) {
-                break;
-            }
-            print("\tSnake.body[{d}]\n", .{i});
-            value.printStatus();
-        }
-    }
+    inline fn handleQueue(self: *Snake) void {
+        var i: usize = 0;
+        print("buffer len {}\n", .{self.sectionBufferLength});
+        while (i < self.sectionBufferLength) : (i += 1) {
+            print("handleQueue i {}\n", .{i});
 
-    pub fn Init() Snake {
-        var snake = Snake{};
-        var prevSection = &snake.head;
-
-        for (&snake.body, 0..) |*section, idx| {
-            if (idx == snake.length) {
-                break;
-            }
-            section.* = Section.Init(Rectangle{
-                .x = prevSection.*.x +
-                    @as(f32, @floatFromInt(sectionSize)) +
-                    sectionGap,
-                .y = prevSection.*.y,
-                .width = sectionSize,
-                .height = sectionSize,
-            });
-            prevSection = &snake.body[idx].section;
-        }
-        return snake;
-    }
-
-    pub fn fruitOverlaping(self: Snake, fruit: *Fruit) bool {
-        for (&self.body, 0..) |*section, idx| {
-            if (idx == self.length) {
-                break;
-            }
-            if (section.section.y >= fruit.fruit.y and
-                section.section.y <= fruit.fruit.y + fruit.dimension and
-                section.section.x >= fruit.fruit.x and
-                section.section.x <= fruit.fruit.x)
+            const nextTarget = &self.targetBuffer[self.sectionBuffer[i].targetPoolStart];
+            const section = &self.recBuffer[self.sectionBuffer[i].recIdx];
+            if (section.y > (nextTarget.position.y - 0.25) and
+                section.y < (nextTarget.position.y + 0.25) and
+                section.x > (nextTarget.position.x - 0.25) and
+                section.x < (nextTarget.position.x + 0.25))
             {
-                return true;
-            }
-        }
-        return false;
-    }
+                print("in if\n", .{});
+                section.x = nextTarget.position.x;
+                section.y = nextTarget.position.y;
+                self.directionBuffer[self.sectionBuffer[i].directionIdx] = nextTarget.nextDirection;
 
-    pub fn handleKeyPress(self: *Snake, key: Keys) void {
-        switch (key) {
-            Keys.key_up, Keys.key_k => {
-                switch (self.direction) {
-                    Direction.down, Direction.up => {
-                        return;
-                    },
-                    else => {
-                        self.direction = Direction.up;
-                        const prev_section = &self.head;
-                        for (&self.body) |*section| {
-                            section.pushNewTarget(Direction.up, prev_section);
-                        }
-                    },
+                print("\t {any}  \n", .{self.sectionBuffer[i]});
+
+                print("\t start {} end {} \n", .{
+                    self.sectionBuffer[i].targetPoolStart,
+                    self.sectionBuffer[i].targetPoolEnd,
+                });
+
+                queueShift(
+                    self.targetBuffer,
+                    self.sectionBuffer[i].targetPoolStart,
+                    self.sectionBuffer[i].targetPoolStart,
+                );
+
+                if (self.sectionBuffer[i].targetCurrentIdx != self.sectionBuffer[i].targetPoolStart) {
+                    self.sectionBuffer[i].targetCurrentIdx -= 1;
                 }
-            },
-            Keys.key_down, Keys.key_j => {
-                switch (self.direction) {
-                    Direction.up, Direction.down => {
-                        return;
-                    },
-                    else => {
-                        self.direction = Direction.down;
-                        const prev_section = &self.head;
-                        for (&self.body) |*section| {
-                            section.pushNewTarget(Direction.down, prev_section);
-                        }
-                    },
-                }
-            },
-            Keys.key_left, Keys.key_h => {
-                switch (self.direction) {
-                    Direction.right, Direction.left => {
-                        return;
-                    },
-                    else => {
-                        self.direction = Direction.left;
-                        const prev_section = &self.head;
-                        for (&self.body) |*section| {
-                            section.pushNewTarget(Direction.left, prev_section);
-                        }
-                    },
-                }
-            },
-            Keys.key_right, Keys.key_l => {
-                switch (self.direction) {
-                    Direction.left, Direction.right => {
-                        return;
-                    },
-                    else => {
-                        self.direction = Direction.right;
-                        const prev_section = &self.head;
-                        for (&self.body) |*section| {
-                            section.pushNewTarget(Direction.right, prev_section);
-                        }
-                    },
-                }
-            },
-            else => {},
-        }
-        if (runMode == OptimizedMode.Debug) {
-            switch (key) {
-                Keys.key_left,
-                Keys.key_up,
-                Keys.key_down,
-                Keys.key_right,
-                Keys.key_h,
-                Keys.key_j,
-                Keys.key_k,
-                Keys.key_l,
-                => {
-                    self.printStatus();
-                },
-                else => {},
             }
         }
     }
 
-    pub fn move(self: *Snake) void {
-        switch (self.direction) {
-            .up => {
-                if (self.head.y < 0) {
-                    self.head.y = Global.screenHeight;
-                    return;
-                }
-                self.head.y = self.head.y - self.speed;
+    pub fn move(self: *Snake, dt: f32) void {
+        var i: usize = 0;
+
+        utils.moveRec(
+            &self.recBuffer[self.head.recIdx],
+            switch (self.directionBuffer[self.head.directionIdx]) {
+                .left => -(self.movementSpeed * dt),
+                .right => (self.movementSpeed * dt),
+                else => 0,
             },
-            .down => {
-                if (self.head.y > Global.screenHeight) {
-                    self.head.y = 0;
-                    return;
-                }
-                self.head.y = self.head.y + self.speed;
+            switch (self.directionBuffer[self.head.directionIdx]) {
+                .up => -(self.movementSpeed * dt),
+                .down => (self.movementSpeed * dt),
+                else => 0,
             },
-            .left => {
-                if (self.head.x < 0.0) {
-                    self.head.x = Global.screenWidth;
-                    return;
-                }
-                self.head.x = self.head.x - self.speed;
-            },
-            .right => {
-                if (self.head.x > Global.screenWidth) {
-                    self.head.x = 0;
-                    return;
-                }
-                self.head.x = self.head.x + self.speed;
-            },
+        );
+
+        utils.teleport(&self.recBuffer[self.head.recIdx]);
+
+        while (i < self.sectionBufferLength) : (i += 1) {
+            utils.moveRec(
+                &self.recBuffer[self.sectionBuffer[i].recIdx],
+                switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
+                    .left => -(self.movementSpeed * dt),
+                    .right => (self.movementSpeed * dt),
+                    else => 0,
+                },
+                switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
+                    .up => -(self.movementSpeed * dt),
+                    .down => (self.movementSpeed * dt),
+                    else => 0,
+                },
+            );
+            utils.teleport(&self.recBuffer[self.sectionBuffer[i].recIdx]);
         }
-        for (&self.*.body, 0..) |*bodyPart, idx| {
-            if (self.length < idx) {
-                break;
-            }
-            switch (self.direction) {
-                .up => {
-                    bodyPart.move(self.speed);
-                },
-                .down => {
-                    bodyPart.move(self.speed);
-                },
-                .left => {
-                    bodyPart.move(self.speed);
-                },
-                .right => {
-                    bodyPart.move(self.speed);
-                },
-            }
-        }
+
+        self.handleQueue();
     }
 
-    pub fn draw(self: Snake) void {
-        raylib.drawRectangleRec(self.head, headColour);
-        for (&self.body, 0..) |*bodyPart, idx| {
-            if (idx > self.length) {
-                break;
-            }
-            raylib.drawRectangleRec(bodyPart.section, bodyColour);
+    pub fn render(self: *Snake) void {
+        var i: usize = 0;
+
+        while (i < self.sectionBufferLength) : (i += 1) {
+            raylib.drawRectangleRounded(
+                self.recBuffer[self.sectionBuffer[i].recIdx],
+                0.45,
+                500,
+                bodyColour,
+            );
         }
+
+        raylib.drawRectangleRounded(self.recBuffer[self.head.recIdx], 0.45, 500, headColour);
     }
 };
+
+const Head = struct {
+    recIdx: usize,
+    directionIdx: usize,
+};
+
+const Section = struct {
+    recIdx: usize,
+    directionIdx: usize,
+    targetCurrentIdx: usize = 0,
+    targetPoolStart: usize,
+    targetPoolEnd: usize,
+};
+
+const Target = struct { position: utils.Point, nextDirection: utils.Direction };
+
+inline fn queueShift(targets: []Target, start: usize, end: usize) void {
+    var i: usize = start;
+    while (i < end) : (i += 1) {
+        print("\t\t queueShift i {}\n", .{i});
+        if (i == end) return;
+        targets[i] = targets[i + 1];
+    }
+}

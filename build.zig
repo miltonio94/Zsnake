@@ -9,6 +9,8 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .opengl_version = rlz.OpenglVersion.gl_4_3,
+        .linux_display_backend = rlz.LinuxDisplayBackend.Wayland,
+        .platform = .sdl,
     });
 
     const raylib = raylib_dep.module("raylib");
