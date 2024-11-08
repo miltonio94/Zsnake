@@ -109,6 +109,7 @@ pub const Snake = struct {
         print("buffer len {}\n", .{self.sectionBufferLength});
         while (i < self.sectionBufferLength) : (i += 1) {
             print("handleQueue i {}\n", .{i});
+
             const nextTarget = &self.targetBuffer[self.sectionBuffer[i].targetPoolStart];
             const section = &self.recBuffer[self.sectionBuffer[i].recIdx];
             if (section.y > (nextTarget.position.y - 0.25) and
