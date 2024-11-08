@@ -106,7 +106,9 @@ pub const Snake = struct {
 
     inline fn handleQueue(self: *Snake) void {
         var i: usize = 0;
+
         print("buffer len {}\n", .{self.sectionBufferLength});
+
         while (i < self.sectionBufferLength) : (i += 1) {
             print("handleQueue i {}\n", .{i});
             const nextTarget = &self.targetBuffer[self.sectionBuffer[i].targetPoolStart];
