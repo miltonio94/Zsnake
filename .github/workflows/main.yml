@@ -11,6 +11,7 @@ jobs:
       - uses: mlugg/setup-zig@v1
       - run: sudo apt-get update
       - run: sudo apt-get install xorg openbox
+      - run: sudo apt install libxcursor-dev
       - run: sudo apt-get install --fix-missing libgl1-mesa-dev
       - run: zig fetch --save https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz
       - run: zig build
