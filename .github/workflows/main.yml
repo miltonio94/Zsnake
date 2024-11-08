@@ -2,7 +2,11 @@ name: Build and Test Program
 on: [push]
 jobs:
   test:
-    runs-on: ubuntu-bionic
+    runs-on: ubuntu-latest
+    name: Update packages
+      - run: sudo apt-get update
+    name: Install packages
+      - run: sudo apt-get install --fix-missing libgl1-mesa-dev
     name: Build 
     steps:
       - uses: actions/checkout@v3
