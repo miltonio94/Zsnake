@@ -2,7 +2,7 @@ name: Build and Test Program
 on: [push]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-bionic
     name: Build 
     steps:
       - uses: actions/checkout@v3
