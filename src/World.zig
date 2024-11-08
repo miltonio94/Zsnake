@@ -1,7 +1,6 @@
 const std = @import("std");
 const utils = @import("utils.zig");
 const raylib = @import("raylib");
-const Snake = @import("snake.old.zig").Snake;
 const snake = @import("snake.zig");
 const Fruit = @import("fruit.zig").Fruit;
 const Global = @import("global.zig");
