@@ -36,12 +36,12 @@ pub fn build(b: *std.Build) !void {
         .{},
     );
 
-    if (b.lazyDependency("vulkan_headers", .{
-        .target = target,
-        .optimize = optimize,
-    })) |dep| {
-        lib.installLibraryHeaders(dep.artifact("vulkan-headers"));
-    }
+    // if (b.lazyDependency("vulkan_headers", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // })) |dep| {
+    //     lib.installLibraryHeaders(dep.artifact("vulkan-headers"));
+    // }
 
     if (os == .linux) {
         if (b.lazyDependency("x11_headers", .{
@@ -170,34 +170,34 @@ const base_sources = [_][]const u8{
 };
 
 const linux_sources = [_][]const u8{
-    "src/linux_joystick.c",
-    "src/posix_module.c",
-    "src/posix_poll.c",
-    "src/posix_thread.c",
-    "src/posix_time.c",
-    "src/xkb_unicode.c",
+    "deps/glfw/src/linux_joystick.c",
+    "deps/glfw/src/posix_module.c",
+    "deps/glfw/src/posix_poll.c",
+    "deps/glfw/src/posix_thread.c",
+    "deps/glfw/src/posix_time.c",
+    "deps/glfw/src/xkb_unicode.c",
 };
 
 const linux_wl_sources = [_][]const u8{
-    "src/wl_init.c",
-    "src/wl_monitor.c",
-    "src/wl_window.c",
+    "deps/glfw/src/wl_init.c",
+    "deps/glfw/src/wl_monitor.c",
+    "deps/glfw/src/wl_window.c",
 };
 
 const linux_x11_sources = [_][]const u8{
-    "src/glx_context.c",
-    "src/x11_init.c",
-    "src/x11_monitor.c",
-    "src/x11_window.c",
+    "deps/glfw/src/glx_context.c",
+    "deps/glfw/src/x11_init.c",
+    "deps/glfw/src/x11_monitor.c",
+    "deps/glfw/src/x11_window.c",
 };
 
 const windows_sources = [_][]const u8{
-    "src/wgl_context.c",
-    "src/win32_init.c",
-    "src/win32_joystick.c",
-    "src/win32_module.c",
-    "src/win32_monitor.c",
-    "src/win32_thread.c",
-    "src/win32_time.c",
-    "src/win32_window.c",
+    "deps/glfw/src/wgl_context.c",
+    "deps/glfw/src/win32_init.c",
+    "deps/glfw/src/win32_joystick.c",
+    "deps/glfw/src/win32_module.c",
+    "deps/glfw/src/win32_monitor.c",
+    "deps/glfw/src/win32_thread.c",
+    "deps/glfw/src/win32_time.c",
+    "deps/glfw/src/win32_window.c",
 };
