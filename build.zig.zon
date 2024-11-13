@@ -5,9 +5,13 @@
 
     .dependencies = .{
         .@"raylib-zig" = .{
-            .url = "https://github.com/Not-Nik/raylib-zig/archive/refs/tags/v5.0.tar.gz",
-            .hash = "1220653de650ac35803998bc1b87d5aa9d84414e5cc2fb78151c6562e8af791ba600",
+            .url = "https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz",
+            .hash = "12202f8c415153088be8df39a51e0a4c9d402afd403422a0dcc9afdd417e437a6fdb",
         },
+        // .zigglgen = .{
+        //     .url = "git+https://github.com/castholm/zigglgen#ae7bebdc5fff0c61ad12be786a1c23581fd23625",
+        //     .hash = "122046eea4433073c12b657bd0363a7694989ee47a2cf4f87e3b4281065758fb1850",
+        // },
     },
 
     .paths = .{""},
