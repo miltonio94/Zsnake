@@ -27,6 +27,19 @@ pub fn build(b: *std.Build) !void {
     exe.linkLibrary(raylib_artifact);
     exe.root_module.addImport("raylib", raylib);
 
+    const test_exe = b.addTest(.{
+        .name = "tests",
+        .root_source_file = b.path("tests.zig"),
+        .target = b.host,
+    });
+    test_exe.linkLibrary(raylib_artifact);
+    test_exe.root_module.addImport("raylib", raylib);
+    b.installArtifact(test_exe);
+
+    const test_artifact = b.addRunArtifact(test_exe);
+    const run_step_test = b.step("test", "Run unit tests");
+    run_step_test.dependOn(&test_artifact.step);
+
     const run_cmd = b.addRunArtifact(exe);
     const run_step = b.step("run", "Run zig_n_raylib");
     run_step.dependOn(&run_cmd.step);
