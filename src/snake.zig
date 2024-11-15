@@ -38,6 +38,11 @@ pub const Snake = struct {
         self.targetBuffer = try allocator.alloc(Target, sectionMaxSize * 50);
         self.directionBuffer = try allocator.alloc(utils.Direction, sectionMaxSize);
 
+        print("self.recBuffer {any}\n", .{self.recBuffer.len});
+        print("self.sectionBuffer {any}\n", .{self.sectionBuffer.len});
+        print("self.targetBuffer {any}\n", .{self.targetBuffer.len});
+        print("self.directionBuffer {any}\n", .{self.directionBuffer.len});
+
         // init Head
         self.head = Head{
             .recIdx = 0,
@@ -51,23 +56,23 @@ pub const Snake = struct {
         };
         self.directionBuffer[0] = utils.Direction.left;
 
-        var i: usize = 1;
-
-        while (i <= self.sectionBufferLength) : (i += 1) {
-            const i_f32: f32 = @floatFromInt(i);
-            self.recBuffer[i] = Rectangle{
+        for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
+            const i_f32: f32 = @floatFromInt(idx + 1);
+            print("idx: {}, i_f32 {d:.6}\n", .{ idx, i_f32 });
+            self.recBuffer[idx + 1] = Rectangle{
                 .x = (Global.screenWidth / 2) + (startingSize * i_f32),
                 .y = Global.screenHeight / 2,
                 .width = startingSize,
                 .height = startingSize,
             };
-            self.sectionBuffer[i - 1] = Section{
-                .recIdx = i,
-                .directionIdx = i,
-                .targetPoolStart = if (i == 1) 0 else i * 50,
-                .targetPoolEnd = if (i == 1) 49 else (i * 50) - 1,
+            section.* = Section{
+                .recIdx = idx + 1,
+                .directionIdx = idx + 1,
+                .targetPool = &self.sectionBuffer[(idx * 50)..(((idx + 1) * 50))],
+                .targetPoolStart = idx * 50,
+                .targetPoolEnd = ((idx + 1) * 50) - 1,
             };
-            self.directionBuffer[i] = utils.Direction.left;
+            self.directionBuffer[idx + 1] = utils.Direction.left;
         }
 
         self.recBufferLength = 4;
@@ -199,6 +204,7 @@ const Head = struct {
 const Section = struct {
     recIdx: usize,
     directionIdx: usize,
+    targetPool: *const []Section,
     targetCurrentIdx: usize = 0,
     targetPoolStart: usize,
     targetPoolEnd: usize,
