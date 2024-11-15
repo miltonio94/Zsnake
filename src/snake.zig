@@ -58,7 +58,6 @@ pub const Snake = struct {
 
         for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
             const i_f32: f32 = @floatFromInt(idx + 1);
-            print("idx: {}, i_f32 {d:.6}\n", .{ idx, i_f32 });
             self.recBuffer[idx + 1] = Rectangle{
                 .x = (Global.screenWidth / 2) + (startingSize * i_f32),
                 .y = Global.screenHeight / 2,
@@ -68,9 +67,7 @@ pub const Snake = struct {
             section.* = Section{
                 .recIdx = idx + 1,
                 .directionIdx = idx + 1,
-                .targetPool = &self.sectionBuffer[(idx * 50)..(((idx + 1) * 50))],
-                .targetPoolStart = idx * 50,
-                .targetPoolEnd = ((idx + 1) * 50) - 1,
+                .targetPool = self.targetBuffer.ptr + (idx * 50),
             };
             self.directionBuffer[idx + 1] = utils.Direction.left;
         }
@@ -87,57 +84,58 @@ pub const Snake = struct {
 
         self.directionBuffer[self.head.directionIdx] = direction;
 
-        var i: usize = 0;
-
-        while (i < self.sectionBufferLength) : (i += 1) {
-            self.targetBuffer[self.sectionBuffer[i].targetCurrentIdx] = Target{
+        for ((self.sectionBuffer[0..(self.sectionBufferLength)]), 0..) |*section, idx| {
+            _ = idx;
+            section.targetPool[section.targetCurrentIdx] = Target{
                 .nextDirection = direction,
                 .position = utils.Point{
                     .x = self.recBuffer[self.head.recIdx].x,
                     .y = self.recBuffer[self.head.recIdx].y,
                 },
             };
+
+            section.*.targetCurrentIdx += 1;
         }
     }
 
-    inline fn handleQueue(self: *Snake) void {
-        var i: usize = 0;
+    // inline fn handleQueue(self: *Snake) void {
+    // var i: usize = 0;
 
-        // print("buffer len {}\n", .{self.sectionBufferLength});
+    // print("buffer len {}\n", .{self.sectionBufferLength});
 
-        while (i < self.sectionBufferLength) : (i += 1) {
-            // print("handleQueue i {}\n", .{i}); //
-            const nextTarget = &self.targetBuffer[self.sectionBuffer[i].targetPoolStart];
-            const section = &self.recBuffer[self.sectionBuffer[i].recIdx];
-            if (section.y > (nextTarget.position.y - 0.25) and
-                section.y < (nextTarget.position.y + 0.25) and
-                section.x > (nextTarget.position.x - 0.25) and
-                section.x < (nextTarget.position.x + 0.25))
-            {
-                // print("in if\n", .{});
-                section.x = nextTarget.position.x;
-                section.y = nextTarget.position.y;
-                self.directionBuffer[self.sectionBuffer[i].directionIdx] = nextTarget.nextDirection;
+    // while (i < self.sectionBufferLength) : (i += 1) {
+    //     // print("handleQueue i {}\n", .{i}); //
+    //     const nextTarget = &self.targetBuffer[self.sectionBuffer[i].targetPoolStart];
+    //     const section = &self.recBuffer[self.sectionBuffer[i].recIdx];
+    //     if (section.y > (nextTarget.position.y - 0.25) and
+    //         section.y < (nextTarget.position.y + 0.25) and
+    //         section.x > (nextTarget.position.x - 0.25) and
+    //         section.x < (nextTarget.position.x + 0.25))
+    //     {
+    //         // print("in if\n", .{});
+    //         section.x = nextTarget.position.x;
+    //         section.y = nextTarget.position.y;
+    //         self.directionBuffer[self.sectionBuffer[i].directionIdx] = nextTarget.nextDirection;
 
-                // print("\t {any}  \n", .{self.sectionBuffer[i]});
+    //         // print("\t {any}  \n", .{self.sectionBuffer[i]});
 
-                // print("\t start {} end {} \n", .{
-                //     self.sectionBuffer[i].targetPoolStart,
-                //     self.sectionBuffer[i].targetPoolEnd,
-                // });
+    //         // print("\t start {} end {} \n", .{
+    //         //     self.sectionBuffer[i].targetPoolStart,
+    //         //     self.sectionBuffer[i].targetPoolEnd,
+    //         // });
 
-                queueShift(
-                    self.targetBuffer,
-                    self.sectionBuffer[i].targetPoolStart,
-                    self.sectionBuffer[i].targetPoolStart,
-                );
+    //         queueShift(
+    //             self.targetBuffer,
+    //             self.sectionBuffer[i].targetPoolStart,
+    //             self.sectionBuffer[i].targetPoolStart,
+    //         );
 
-                if (self.sectionBuffer[i].targetCurrentIdx != self.sectionBuffer[i].targetPoolStart) {
-                    self.sectionBuffer[i].targetCurrentIdx -= 1;
-                }
-            }
-        }
-    }
+    //         if (self.sectionBuffer[i].targetCurrentIdx != self.sectionBuffer[i].targetPoolStart) {
+    //             self.sectionBuffer[i].targetCurrentIdx -= 1;
+    //         }
+    //     }
+    // }
+    // }
 
     pub fn move(self: *Snake, dt: f32) void {
         var i: usize = 0;
@@ -177,7 +175,7 @@ pub const Snake = struct {
             utils.teleport(&self.recBuffer[self.sectionBuffer[i].recIdx]);
         }
 
-        self.handleQueue();
+        // self.handleQueue();
     }
 
     pub fn render(self: *Snake) void {
@@ -204,10 +202,8 @@ const Head = struct {
 const Section = struct {
     recIdx: usize,
     directionIdx: usize,
-    targetPool: *const []Section,
+    targetPool: [*]Target,
     targetCurrentIdx: usize = 0,
-    targetPoolStart: usize,
-    targetPoolEnd: usize,
 };
 
 const Target = struct { position: utils.Point, nextDirection: utils.Direction };
