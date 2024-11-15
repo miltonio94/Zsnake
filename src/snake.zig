@@ -38,11 +38,6 @@ pub const Snake = struct {
         self.targetBuffer = try allocator.alloc(Target, sectionMaxSize * 50);
         self.directionBuffer = try allocator.alloc(utils.Direction, sectionMaxSize);
 
-        print("self.recBuffer {any}\n", .{self.recBuffer.len});
-        print("self.sectionBuffer {any}\n", .{self.sectionBuffer.len});
-        print("self.targetBuffer {any}\n", .{self.targetBuffer.len});
-        print("self.directionBuffer {any}\n", .{self.directionBuffer.len});
-
         self.head = Head{
             .recIdx = 0,
             .directionIdx = 0,
@@ -77,7 +72,7 @@ pub const Snake = struct {
         return self;
     }
 
-    pub fn update(self: *Snake, direction: utils.Direction) void {
+    pub inline fn update(self: *Snake, direction: utils.Direction) void {
         if (self.directionBuffer[self.head.directionIdx] == direction or
             self.directionBuffer[self.head.directionIdx] == direction.opposite()) return;
 
@@ -100,10 +95,10 @@ pub const Snake = struct {
     inline fn handleQueue(self: *Snake) void {
         for (self.sectionBuffer[0..self.sectionBufferLength]) |*section| {
             var rec = &self.recBuffer[section.recIdx];
-            if (rec.y > (section.targetPool[0].position.y - 0.75) and
-                rec.y < (section.targetPool[0].position.y + 0.75) and
-                rec.x > (section.targetPool[0].position.x - 0.75) and
-                rec.x < (section.targetPool[0].position.x + 0.75))
+            if (rec.y > (section.targetPool[0].position.y - 0.85) and
+                rec.y < (section.targetPool[0].position.y + 0.85) and
+                rec.x > (section.targetPool[0].position.x - 0.85) and
+                rec.x < (section.targetPool[0].position.x + 0.85))
             {
                 rec.x = section.targetPool[0].position.x;
                 rec.y = section.targetPool[0].position.y;
@@ -119,7 +114,7 @@ pub const Snake = struct {
         }
     }
 
-    pub fn move(self: *Snake, dt: f32) void {
+    pub inline fn move(self: *Snake, dt: f32) void {
         var i: usize = 0;
 
         utils.moveRec(
