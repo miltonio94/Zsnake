@@ -43,7 +43,6 @@ pub const Snake = struct {
         print("self.targetBuffer {any}\n", .{self.targetBuffer.len});
         print("self.directionBuffer {any}\n", .{self.directionBuffer.len});
 
-        // init Head
         self.head = Head{
             .recIdx = 0,
             .directionIdx = 0,
@@ -72,8 +71,8 @@ pub const Snake = struct {
             self.directionBuffer[idx + 1] = utils.Direction.left;
         }
 
-        self.recBufferLength = 4;
-        self.directionBufferLength = 3;
+        self.recBufferLength = self.sectionBufferLength + 1;
+        self.directionBufferLength = self.sectionBufferLength + 1;
 
         return self;
     }
@@ -98,44 +97,27 @@ pub const Snake = struct {
         }
     }
 
-    // inline fn handleQueue(self: *Snake) void {
-    // var i: usize = 0;
+    inline fn handleQueue(self: *Snake) void {
+        for (self.sectionBuffer[0..self.sectionBufferLength]) |*section| {
+            var rec = &self.recBuffer[section.recIdx];
+            if (rec.y > (section.targetPool[0].position.y - 0.75) and
+                rec.y < (section.targetPool[0].position.y + 0.75) and
+                rec.x > (section.targetPool[0].position.x - 0.75) and
+                rec.x < (section.targetPool[0].position.x + 0.75))
+            {
+                rec.x = section.targetPool[0].position.x;
+                rec.y = section.targetPool[0].position.y;
 
-    // print("buffer len {}\n", .{self.sectionBufferLength});
+                self.directionBuffer[section.directionIdx] = section.targetPool[0].nextDirection;
 
-    // while (i < self.sectionBufferLength) : (i += 1) {
-    //     // print("handleQueue i {}\n", .{i}); //
-    //     const nextTarget = &self.targetBuffer[self.sectionBuffer[i].targetPoolStart];
-    //     const section = &self.recBuffer[self.sectionBuffer[i].recIdx];
-    //     if (section.y > (nextTarget.position.y - 0.25) and
-    //         section.y < (nextTarget.position.y + 0.25) and
-    //         section.x > (nextTarget.position.x - 0.25) and
-    //         section.x < (nextTarget.position.x + 0.25))
-    //     {
-    //         // print("in if\n", .{});
-    //         section.x = nextTarget.position.x;
-    //         section.y = nextTarget.position.y;
-    //         self.directionBuffer[self.sectionBuffer[i].directionIdx] = nextTarget.nextDirection;
+                queueShift(section.targetPool);
 
-    //         // print("\t {any}  \n", .{self.sectionBuffer[i]});
-
-    //         // print("\t start {} end {} \n", .{
-    //         //     self.sectionBuffer[i].targetPoolStart,
-    //         //     self.sectionBuffer[i].targetPoolEnd,
-    //         // });
-
-    //         queueShift(
-    //             self.targetBuffer,
-    //             self.sectionBuffer[i].targetPoolStart,
-    //             self.sectionBuffer[i].targetPoolStart,
-    //         );
-
-    //         if (self.sectionBuffer[i].targetCurrentIdx != self.sectionBuffer[i].targetPoolStart) {
-    //             self.sectionBuffer[i].targetCurrentIdx -= 1;
-    //         }
-    //     }
-    // }
-    // }
+                if (section.targetCurrentIdx != 0) {
+                    section.targetCurrentIdx -= 1;
+                }
+            }
+        }
+    }
 
     pub fn move(self: *Snake, dt: f32) void {
         var i: usize = 0;
@@ -157,8 +139,6 @@ pub const Snake = struct {
         utils.teleport(&self.recBuffer[self.head.recIdx]);
 
         while (i < self.sectionBufferLength) : (i += 1) {
-            // print("sectionBuffer[{}]\n", .{i});
-            // print("self.sectionBuffer[{}].recIdx = {}\n", .{ i, self.sectionBuffer[i].recIdx });
             utils.moveRec(
                 &self.recBuffer[self.sectionBuffer[i].recIdx],
                 switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
@@ -175,7 +155,7 @@ pub const Snake = struct {
             utils.teleport(&self.recBuffer[self.sectionBuffer[i].recIdx]);
         }
 
-        // self.handleQueue();
+        self.handleQueue();
     }
 
     pub fn render(self: *Snake) void {
@@ -208,11 +188,13 @@ const Section = struct {
 
 const Target = struct { position: utils.Point, nextDirection: utils.Direction };
 
-inline fn queueShift(targets: []Target, start: usize, end: usize) void {
-    var i: usize = start;
-    while (i < end) : (i += 1) {
-        // print("\t\t queueShift i {}\n", .{i});
-        if (i == end) return;
-        targets[i] = targets[i + 1];
+inline fn queueShift(targets: [*]Target) void {
+    var idx: usize = 0;
+    while (idx < 50) : (idx += 1) {
+        if (idx == 49) {
+            targets[idx] = undefined;
+            continue;
+        }
+        targets[idx] = targets[idx + 1];
     }
 }
