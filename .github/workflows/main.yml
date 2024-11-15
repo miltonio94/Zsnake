@@ -16,4 +16,4 @@ jobs:
       - run: sudo apt-get install libx11-dev xserver-xorg-dev xorg-dev
       - run: sudo apt-get install --fix-missing libgl1-mesa-dev
       - run: zig fetch --save https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz
-      - run: zig build
+      - run: zig build -Dlinux_display_backend=x11
