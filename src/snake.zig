@@ -94,14 +94,13 @@ pub const Snake = struct {
 
     inline fn handleQueue(self: *Snake) void {
         for (self.sectionBuffer[0..self.sectionBufferLength]) |*section| {
-            var rec = &self.recBuffer[section.recIdx];
-            if (rec.y > (section.targetPool[0].position.y - 0.85) and
-                rec.y < (section.targetPool[0].position.y + 0.85) and
-                rec.x > (section.targetPool[0].position.x - 0.85) and
-                rec.x < (section.targetPool[0].position.x + 0.85))
+            if (self.recBuffer[section.recIdx].y >= (section.targetPool[0].position.y - 1.05) and
+                self.recBuffer[section.recIdx].y <= (section.targetPool[0].position.y + 1.05) and
+                self.recBuffer[section.recIdx].x >= (section.targetPool[0].position.x - 1.05) and
+                self.recBuffer[section.recIdx].x <= (section.targetPool[0].position.x + 1.05))
             {
-                rec.x = section.targetPool[0].position.x;
-                rec.y = section.targetPool[0].position.y;
+                self.recBuffer[section.recIdx].x = section.targetPool[0].position.x;
+                self.recBuffer[section.recIdx].y = section.targetPool[0].position.y;
 
                 self.directionBuffer[section.directionIdx] = section.targetPool[0].nextDirection;
 
@@ -138,6 +137,7 @@ pub const Snake = struct {
             utils.moveRecIfNoColision(
                 &self.recBuffer[self.sectionBuffer[i].recIdx],
                 prevRec,
+                self.directionBuffer[self.sectionBuffer[i].directionIdx],
                 switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
                     .left => -(self.movementSpeed * dt),
                     .right => (self.movementSpeed * dt),

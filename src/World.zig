@@ -90,7 +90,9 @@ pub const World = struct {
         raylib.setTargetFPS(200);
 
         while (!raylib.windowShouldClose()) {
-            print("FPS: {d:.10}\n", .{self.dt});
+            if (false) {
+                print("FPS: {d:.10}\n", .{self.dt});
+            }
             self.dt = raylib.getFrameTime();
             const command = utils.Command.keyToCommand(raylib.getKeyPressed());
 

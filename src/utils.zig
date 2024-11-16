@@ -39,14 +39,48 @@ pub inline fn moveRec(rec: *Rectangle, x: f32, y: f32) void {
     rec.y += y;
 }
 
-pub inline fn moveRecIfNoColision(sourceRec: *Rectangle, checkForColisionRec: *Rectangle, x: f32, y: f32) void {
-    const newX = sourceRec.x + x;
-    const newY = sourceRec.y + y;
-    if ((newX < (checkForColisionRec.x + checkForColisionRec.width) and (newX + sourceRec.width) > checkForColisionRec.x)) {
-        sourceRec.x = newX;
-    }
-    if ((newY < (checkForColisionRec.y + checkForColisionRec.height) and (newY + sourceRec.height) > checkForColisionRec.y)) {
-        sourceRec.y = newY;
+pub inline fn moveRecIfNoColision(
+    source: *Rectangle,
+    check: *Rectangle,
+    direction: Direction,
+    x: f32,
+    y: f32,
+) void {
+    switch (direction) {
+        .left, .right => {
+            if (source.y == check.y) {
+                if ((source.x < (check.x + check.width) and
+                    (source.x + source.width) > check.x) and
+                    (source.y < (check.y + check.height) and
+                    (source.y + source.height) > check.y))
+                {
+                    source.y += y;
+                } else {
+                    source.x += x;
+                    source.y += y;
+                }
+            } else {
+                source.x += x;
+                source.y += y;
+            }
+        },
+        .up, .down => {
+            if (source.x == check.x) {
+                if ((source.x < (check.x + check.width) and
+                    (source.x + source.width) > check.x) and
+                    (source.y < (check.y + check.height) and
+                    (source.y + source.height) > check.y))
+                {
+                    source.x += x;
+                } else {
+                    source.x += x;
+                    source.y += y;
+                }
+            } else {
+                source.x += x;
+                source.y += y;
+            }
+        },
     }
 }
 
