@@ -133,9 +133,11 @@ pub const Snake = struct {
 
         utils.teleport(&self.recBuffer[self.head.recIdx]);
 
+        var prevRec = &self.recBuffer[self.head.recIdx];
         while (i < self.sectionBufferLength) : (i += 1) {
-            utils.moveRec(
+            utils.moveRecIfNoColision(
                 &self.recBuffer[self.sectionBuffer[i].recIdx],
+                prevRec,
                 switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
                     .left => -(self.movementSpeed * dt),
                     .right => (self.movementSpeed * dt),
@@ -147,6 +149,7 @@ pub const Snake = struct {
                     else => 0,
                 },
             );
+            prevRec = &self.recBuffer[self.sectionBuffer[i].recIdx];
             utils.teleport(&self.recBuffer[self.sectionBuffer[i].recIdx]);
         }
 

@@ -39,6 +39,17 @@ pub inline fn moveRec(rec: *Rectangle, x: f32, y: f32) void {
     rec.y += y;
 }
 
+pub inline fn moveRecIfNoColision(sourceRec: *Rectangle, checkForColisionRec: *Rectangle, x: f32, y: f32) void {
+    const newX = sourceRec.x + x;
+    const newY = sourceRec.y + y;
+    if ((newX < (checkForColisionRec.x + checkForColisionRec.width) and (newX + sourceRec.width) > checkForColisionRec.x)) {
+        sourceRec.x = newX;
+    }
+    if ((newY < (checkForColisionRec.y + checkForColisionRec.height) and (newY + sourceRec.height) > checkForColisionRec.y)) {
+        sourceRec.y = newY;
+    }
+}
+
 pub fn teleport(rec: *Rectangle) void {
     if (rec.x > global.screenWidth + rec.width) {
         rec.x = 0;
