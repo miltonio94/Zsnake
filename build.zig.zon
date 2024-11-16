@@ -8,6 +8,21 @@
             .url = "https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz",
             .hash = "122062d2421175ba6bf89382c86621270e4883f1074ee4cc09da282e231bdef57328",
         },
+        .vulkan_headers = .{
+            .url = "https://pkg.machengine.org/vulkan-headers/ae4bb705e6cad613825d9e7d8ffc29ca595f54cb.tar.gz",
+            .hash = "122058b98f7d2ac86597363d0c0515c30aea392c605d5976c600196bd2c5b08b95d6",
+            .lazy = true,
+        },
+        .wayland_headers = .{
+            .url = "https://pkg.machengine.org/wayland-headers/ed5542501a548ac23841c8f22cec0af89f46325a.tar.gz",
+            .hash = "1220f350a0782d20a6618ea4e2884f7d0205a4e9b02c2d65fe3bf7b8113e7860fadf",
+            .lazy = true,
+        },
+        .x11_headers = .{
+            .url = "https://pkg.machengine.org/x11-headers/22bb51a939722a819bf52aba100ac6c25acfbaff.tar.gz",
+            .hash = "1220ddf168c855cf69b4f8c5284403106a3c681913e34453df10cc5a588d9bd1d005",
+            .lazy = true,
+        },
     },
 
     .paths = .{""},

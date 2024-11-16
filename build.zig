@@ -1,14 +1,80 @@
 const std = @import("std");
 const rlz = @import("raylib-zig");
 const builtin = @import("builtin");
-
 const os = builtin.target.os.tag;
 
-pub fn build(b: *std.Build) !void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+const Options = struct {
+    shared: bool = false,
+    raudio: bool = true,
+    rmodels: bool = true,
+    rshapes: bool = true,
+    rtext: bool = true,
+    rtextures: bool = true,
+    openglVersion: rlz.OpenglVersion = .auto,
+    linux_display_backend: rlz.LinuxDisplayBackend = .Wayland,
+    target: std.Build.ResolvedTarget = undefined,
+    optimize: std.builtin.OptimizeMode = undefined,
 
-    const shared = b.option(bool, "shared", "Build as a shared library") orelse false;
+    pub fn getOptions(b: *std.Build) Options {
+        const defaults = Options{};
+        return .{
+            .shared = b.option(bool, "shared", "Build library shared") orelse defaults.shared,
+            .raudio = b.option(bool, "raudio", "Include raudio") orelse defaults.raudio,
+            .rmodels = b.option(bool, "rmodels", "Include rmodels") orelse defaults.rmodels,
+            .rshapes = b.option(bool, "rshapes", "Include rshapes") orelse defaults.rshapes,
+            .rtext = b.option(bool, "rtext", "Include rtext") orelse defaults.rtext,
+            .rtextures = b.option(bool, "rtextures", "Include rtextures") orelse defaults.rtextures,
+            .openglVersion = b.option(
+                rlz.OpenglVersion,
+                "openglV",
+                "Version of OpenGL to use",
+            ) orelse defaults.openglVersion,
+            .linux_display_backend = b.option(
+                rlz.LinuxDisplayBackend,
+                "linuxDBackend",
+                "Linux display backend to use",
+            ) orelse defaults.linux_display_backend,
+            .target = b.standardTargetOptions(.{}),
+            .optimize = b.standardOptimizeOption(.{}),
+        };
+    }
+};
+
+pub fn build(b: *std.Build) !void {
+    const options = Options.getOptions(b);
+
+    buildGlfw(b, options);
+
+    const raylib_dep = b.dependency("raylib-zig", .{
+        .target = options.target,
+        .optimize = options.optimize,
+        .opengl_version = rlz.OpenglVersion.gl_3_3,
+        .linux_display_backend = rlz.LinuxDisplayBackend.X11,
+        .platform = .rgfw,
+    });
+
+    const exe = b.addExecutable(.{
+        .name = "Znake",
+        .root_source_file = b.path("src/main.zig"),
+        .optimize = options.optimize,
+        .target = options.target,
+    });
+
+    const raylib = raylib_dep.module("raylib");
+    const raylib_artifact = raylib_dep.artifact("raylib");
+
+    exe.linkLibrary(raylib_artifact);
+    exe.root_module.addImport("raylib", raylib);
+
+    const run_cmd = b.addRunArtifact(exe);
+    const run_step = b.step("run", "Run zig_n_raylib");
+    run_step.dependOn(&run_cmd.step);
+
+    b.installArtifact(exe);
+}
+
+fn buildGlfw(b: *std.Build, options: Options) void {
+    const shared = b.option(bool, "shared_", "Build as a shared library") orelse false;
 
     const use_x11 = b.option(bool, "x11", "Build with X11. Only useful on Linux") orelse false;
     const use_wl = b.option(bool, "wayland", "Build with Wayland. Only useful on Linux") orelse if (os == .linux) true else false;
@@ -21,8 +87,8 @@ pub fn build(b: *std.Build) !void {
         .kind = .lib,
         .linkage = if (shared) .dynamic else .static,
         .root_module = .{
-            .target = target,
-            .optimize = optimize,
+            .target = options.target,
+            .optimize = options.optimize,
         },
     });
     lib.addIncludePath(b.path("./deps/include"));
@@ -36,24 +102,24 @@ pub fn build(b: *std.Build) !void {
         .{},
     );
 
-    // if (b.lazyDependency("vulkan_headers", .{
-    //     .target = target,
-    //     .optimize = optimize,
-    // })) |dep| {
-    //     lib.installLibraryHeaders(dep.artifact("vulkan-headers"));
-    // }
+    if (b.lazyDependency("vulkan_headers", .{
+        .target = options.target,
+        .optimize = options.optimize,
+    })) |dep| {
+        lib.installLibraryHeaders(dep.artifact("vulkan-headers"));
+    }
 
     if (os == .linux) {
         if (b.lazyDependency("x11_headers", .{
-            .target = target,
-            .optimize = optimize,
+            .target = options.target,
+            .optimize = options.optimize,
         })) |dep| {
             lib.linkLibrary(dep.artifact("x11-headers"));
             lib.installLibraryHeaders(dep.artifact("x11-headers"));
         }
         if (b.lazyDependency("wayland_headers", .{
-            .target = target,
-            .optimize = optimize,
+            .target = options.target,
+            .optimize = options.optimize,
         })) |dep| {
             lib.linkLibrary(dep.artifact("wayland-headers"));
             lib.installLibraryHeaders(dep.artifact("wayland-headers"));
@@ -125,34 +191,8 @@ pub fn build(b: *std.Build) !void {
     }
 
     b.installArtifact(lib);
-
-    const raylib_dep = b.dependency("raylib-zig", .{
-        .target = target,
-        .optimize = optimize,
-        .opengl_version = rlz.OpenglVersion.gl_4_3,
-        // .linux_display_backend = rlz.LinuxDisplayBackend.Wayland,
-        .platform = .sdl,
-    });
-
-    const exe = b.addExecutable(.{
-        .name = "Znake",
-        .root_source_file = b.path("src/main.zig"),
-        .optimize = optimize,
-        .target = target,
-    });
-
-    const raylib = raylib_dep.module("raylib");
-    const raylib_artifact = raylib_dep.artifact("raylib");
-
-    exe.linkLibrary(raylib_artifact);
-    exe.root_module.addImport("raylib", raylib);
-
-    const run_cmd = b.addRunArtifact(exe);
-    const run_step = b.step("run", "Run zig_n_raylib");
-    run_step.dependOn(&run_cmd.step);
-
-    b.installArtifact(exe);
 }
+
 const base_sources = [_][]const u8{
     "deps/glfw/src/context.c",
     "deps/glfw/src/egl_context.c",
