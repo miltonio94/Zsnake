@@ -92,6 +92,34 @@ pub const Snake = struct {
         }
     }
 
+    pub inline fn selfCollision(self: *Snake) bool {
+        const head = self.recBuffer[self.head.recIdx];
+        const direction = self.directionBuffer[self.head.directionIdx];
+
+        for (self.sectionBuffer[0..self.sectionBufferLength]) |*section| {
+            const sectionRec = self.recBuffer[section.recIdx];
+            switch (direction) {
+                .up => {
+                    if (head.x == sectionRec.x and head.y == sectionRec.y + sectionRec.height)
+                        return true;
+                },
+                .down => {
+                    if (head.x == sectionRec.x and head.y + head.height == sectionRec.y)
+                        return true;
+                },
+                .left => {
+                    if (head.x == sectionRec.x + sectionRec.width and head.y == sectionRec.y)
+                        return true;
+                },
+                .right => {
+                    if (head.x + head.width == sectionRec.x and head.y == sectionRec.y)
+                        return true;
+                },
+            }
+        }
+        return false;
+    }
+
     inline fn handleQueue(self: *Snake) void {
         for (self.sectionBuffer[0..self.sectionBufferLength]) |*section| {
             if (self.recBuffer[section.recIdx].y >= (section.targetPool[0].position.y - 1.05) and

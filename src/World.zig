@@ -22,6 +22,7 @@ pub const World = struct {
     const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
     const pauseColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 188 };
     const pausedFontColour = Colour{ .r = 93, .g = 178, .b = 248, .a = 255 };
+    const gameOverFontColour = Colour{ .r = 255, .g = 0, .b = 0, .a = 255 };
     const rectOverlay = Rectangle{
         .x = 0,
         .y = 0,
@@ -64,6 +65,18 @@ pub const World = struct {
         self.snake = try snake.Snake.init(&self.allocator);
 
         return self;
+    }
+
+    fn gameOverOverlay(self: *World) void {
+        raylib.drawRectangleRec(rectOverlay, pauseColour);
+        raylib.drawTextEx(
+            font,
+            "Game Over",
+            self.fontPos,
+            fontSize,
+            fontSpacing,
+            gameOverFontColour,
+        );
     }
 
     fn pauseOverlay(self: *World) void {
@@ -112,6 +125,10 @@ pub const World = struct {
                 else => {},
             }
 
+            if (self.snake.selfCollision()) {
+                self.state = .gameOver;
+            }
+
             if (self.state == State.play) {
                 self.moveEntities();
             }
@@ -125,6 +142,10 @@ pub const World = struct {
 
             if (self.state == .paused) {
                 self.pauseOverlay();
+            }
+
+            if (self.state == .gameOver) {
+                self.gameOverOverlay();
             }
 
             if (runMode == OptimizedMode.Debug) {
@@ -141,4 +162,5 @@ pub const World = struct {
 const State = enum {
     paused,
     play,
+    gameOver,
 };
