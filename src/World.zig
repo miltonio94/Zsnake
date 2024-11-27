@@ -19,6 +19,74 @@ const FixedBufferAllocator = std.heap.FixedBufferAllocator;
 const pager = std.heap.page_allocator;
 
 pub const World = struct {
+    const MenuSelection = enum {
+        start,
+        restart,
+        quit,
+
+        inline fn nextValue(self: MenuSelection) MenuSelection {
+            return switch (self) {
+                .start => .restart,
+                .restart => .quit,
+                .quit => .start,
+            };
+        }
+
+        inline fn prevValue(self: MenuSelection) MenuSelection {
+            return switch (self) {
+                .start => .quit,
+                .restart => .start,
+                .quit => .restart,
+            };
+        }
+
+        pub inline fn update(self: *MenuSelection, direction: utils.Direction) void {
+            switch (direction) {
+                .up => {
+                    self.* = self.prevValue();
+                },
+                .down => {
+                    self.* = self.nextValue();
+                },
+                else => {},
+            }
+        }
+
+        pub inline fn draw(self: MenuSelection) void {
+            const startingPoint = -(Global.screenHeight / 4);
+            utils.drawTextCentered(
+                "Start",
+                fontSize,
+                font,
+                fontSpacing,
+                if (self == .start) red else yellow,
+                startingPoint,
+            );
+            utils.drawTextCentered(
+                "Restart",
+                fontSize,
+                font,
+                fontSpacing,
+                if (self == .restart) red else yellow,
+                startingPoint + 45,
+            );
+            utils.drawTextCentered(
+                "Quit",
+                fontSize,
+                font,
+                fontSpacing,
+                if (self == .quit) red else yellow,
+                startingPoint + 90,
+            );
+        }
+    };
+
+    const State = enum {
+        paused,
+        menu,
+        play,
+        gameOver,
+    };
     const orange = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
     const yellow = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
     const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
@@ -77,6 +145,7 @@ pub const World = struct {
         _ = self;
         raylib.drawRectangleRec(rectOverlay, overLayColour);
         utils.drawTextCentered(menuTitleTxt, fontSize, font, fontSpacing, orange, -(Global.screenHeight / 3));
+        menuSeletion.draw();
     }
 
     fn gameOverOverlay(self: *World) void {
@@ -125,9 +194,15 @@ pub const World = struct {
                         self.state = .menu;
                     }
                 },
+                .select => {
+                    // handle menu logic
+                },
                 .direction => |direction| {
                     if (self.state == .play) {
                         self.snake.update(direction);
+                    }
+                    if (self.state == .menu) {
+                        menuSeletion.update(direction);
                     }
                 },
                 else => {},
@@ -167,16 +242,4 @@ pub const World = struct {
     inline fn render(self: *World) void {
         self.snake.render();
     }
-};
-
-const MenuSelection = enum {
-    start,
-    quit,
-};
-
-const State = enum {
-    paused,
-    menu,
-    play,
-    gameOver,
 };

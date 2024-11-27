@@ -107,6 +107,7 @@ pub const Command_ = enum {
     direction,
     pause_toggle,
     menu_toggle,
+    select,
     no_op,
 };
 
@@ -114,19 +115,20 @@ pub const Command = union(Command_) {
     direction: Direction,
     pause_toggle,
     menu_toggle,
+    select,
     no_op,
 
     pub fn keyToCommand(key: Keys) Command {
-        switch (key) {
-            Keys.key_escape => return .menu_toggle,
-            Keys.key_p => return .pause_toggle,
-            Keys.key_up, Keys.key_k => return Command{ .direction = Direction.up },
-            Keys.key_down, Keys.key_j => return Command{ .direction = Direction.down },
-            Keys.key_left, Keys.key_h => return Command{ .direction = Direction.left },
-            Keys.key_right, Keys.key_l => return Command{ .direction = Direction.right },
-            else => return .no_op,
-        }
-        return .no_op;
+        return switch (key) {
+            Keys.key_escape => .menu_toggle,
+            Keys.key_enter => .select,
+            Keys.key_p => .pause_toggle,
+            Keys.key_up, Keys.key_k => Command{ .direction = Direction.up },
+            Keys.key_down, Keys.key_j => Command{ .direction = Direction.down },
+            Keys.key_left, Keys.key_h => Command{ .direction = Direction.left },
+            Keys.key_right, Keys.key_l => Command{ .direction = Direction.right },
+            else => .no_op,
+        };
     }
 };
 
@@ -152,7 +154,7 @@ pub inline fn drawTextCentered(text: [*:0]const u8, fontSize: i32, font: raylib.
     raylib.drawTextEx(
         font,
         text,
-        .{ .x = global.screenWidth / 2 - @as(f32, @floatFromInt(@divExact(textWidth, 2))), .y = global.screenHeight / 2 + yOffset },
+        .{ .x = global.screenWidth / 2 - @as(f32, @floatFromInt(@divTrunc(textWidth, 2))), .y = global.screenHeight / 2 + yOffset },
         fontSize,
         fontSpacing,
         colour,
