@@ -19,10 +19,12 @@ const FixedBufferAllocator = std.heap.FixedBufferAllocator;
 const pager = std.heap.page_allocator;
 
 pub const World = struct {
+    const orange = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
+    const yellow = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
     const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
-    const pauseColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 188 };
-    const pausedFontColour = Colour{ .r = 93, .g = 178, .b = 248, .a = 255 };
-    const gameOverFontColour = Colour{ .r = 255, .g = 0, .b = 0, .a = 255 };
+    const overLayColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 188 };
+    const lightBlue = Colour{ .r = 93, .g = 178, .b = 248, .a = 255 };
+    const red = Colour{ .r = 234, .g = 61, .b = 84, .a = 255 };
     const rectOverlay = Rectangle{
         .x = 0,
         .y = 0,
@@ -30,9 +32,13 @@ pub const World = struct {
         .height = Global.screenHeight,
     };
     const pausedTxt = "Paused";
+    const menuTitleTxt = "Menu";
+    const gameOverTxt = "Game Over";
     const fontSize = 24;
     const fontSpacing = 2.0;
     var font: Font = undefined;
+    var gameRunning = true;
+    var menuSeletion: MenuSelection = .start;
 
     dt: f32 = 0,
     movementSpeed: f32 = 100,
@@ -67,27 +73,36 @@ pub const World = struct {
         return self;
     }
 
+    fn menuRender(self: World) void {
+        _ = self;
+        raylib.drawRectangleRec(rectOverlay, overLayColour);
+        utils.drawTextCentered(menuTitleTxt, fontSize, font, fontSpacing, red, -(Global.screenHeight / 3));
+    }
+
     fn gameOverOverlay(self: *World) void {
-        raylib.drawRectangleRec(rectOverlay, pauseColour);
+        const textWidth = raylib.measureText(gameOverTxt, fontSize);
+        raylib.drawRectangleRec(rectOverlay, overLayColour);
         raylib.drawTextEx(
             font,
-            "Game Over",
-            self.fontPos,
+            gameOverTxt,
+            .{ .x = self.fontPos.x + @as(f32, @floatFromInt(@divExact(textWidth, 2))), .y = self.fontPos.y },
             fontSize,
             fontSpacing,
-            gameOverFontColour,
+            red,
         );
     }
 
     fn pauseOverlay(self: *World) void {
-        raylib.drawRectangleRec(rectOverlay, pauseColour);
+        const textWidth = raylib.measureText(pausedTxt, fontSize);
+        raylib.drawRectangleRec(rectOverlay, overLayColour);
         raylib.drawTextEx(
             font,
             pausedTxt,
-            self.fontPos,
+            // TODO: redo the following
+            .{ .x = self.fontPos.x + @as(f32, @floatFromInt(@divExact(textWidth, 2))), .y = self.fontPos.y },
             fontSize,
             fontSpacing,
-            pausedFontColour,
+            lightBlue,
         );
     }
 
@@ -102,8 +117,9 @@ pub const World = struct {
 
         raylib.setTargetFPS(200);
 
-        while (!raylib.windowShouldClose()) {
-            if (false) {
+        while (gameRunning) {
+            // TODO: Figure out if we can make the fps print only happen if a comp time var is passed through
+            if (runMode == .Debug) {
                 print("FPS: {d:.10}\n", .{self.dt});
             }
             self.dt = raylib.getFrameTime();
@@ -111,26 +127,25 @@ pub const World = struct {
 
             switch (command) {
                 .pause_toggle => {
-                    if (self.state == State.play) {
-                        self.state = State.paused;
+                    if (self.state == .play) {
+                        self.state = .paused;
                     } else {
-                        self.state = State.play;
+                        self.state = .play;
+                    }
+                },
+                .menu_toggle => {
+                    if (self.state == .menu) {
+                        self.state = .play;
+                    } else {
+                        self.state = .menu;
                     }
                 },
                 .direction => |direction| {
-                    if (self.state == State.play) {
+                    if (self.state == .play) {
                         self.snake.update(direction);
                     }
                 },
                 else => {},
-            }
-
-            if (self.snake.selfCollision()) {
-                self.state = .gameOver;
-            }
-
-            if (self.state == State.play) {
-                self.moveEntities();
             }
 
             raylib.beginDrawing();
@@ -140,15 +155,25 @@ pub const World = struct {
 
             self.render();
 
-            if (self.state == .paused) {
-                self.pauseOverlay();
+            switch (self.state) {
+                .paused => {
+                    self.pauseOverlay();
+                },
+                .gameOver => {
+                    self.gameOverOverlay();
+                },
+                .menu => {
+                    self.menuRender();
+                },
+                .play => {
+                    if (self.snake.selfCollision()) {
+                        self.state = .gameOver;
+                    }
+                    self.moveEntities();
+                },
             }
 
-            if (self.state == .gameOver) {
-                self.gameOverOverlay();
-            }
-
-            if (runMode == OptimizedMode.Debug) {
+            if (runMode == .Debug) {
                 raylib.drawFPS(5, 5);
             }
         }
@@ -159,8 +184,14 @@ pub const World = struct {
     }
 };
 
+const MenuSelection = enum {
+    start,
+    quit,
+};
+
 const State = enum {
     paused,
+    menu,
     play,
     gameOver,
 };

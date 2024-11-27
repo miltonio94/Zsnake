@@ -106,16 +106,19 @@ pub fn teleport(rec: *Rectangle) void {
 pub const Command_ = enum {
     direction,
     pause_toggle,
+    menu_toggle,
     no_op,
 };
 
 pub const Command = union(Command_) {
     direction: Direction,
     pause_toggle,
+    menu_toggle,
     no_op,
 
     pub fn keyToCommand(key: Keys) Command {
         switch (key) {
+            Keys.key_escape => return .menu_toggle,
             Keys.key_p => return .pause_toggle,
             Keys.key_up, Keys.key_k => return Command{ .direction = Direction.up },
             Keys.key_down, Keys.key_j => return Command{ .direction = Direction.down },
@@ -143,3 +146,15 @@ pub const Direction = enum {
 };
 
 pub const Point = struct { x: f32, y: f32 };
+
+pub inline fn drawTextCentered(text: [*:0]const u8, fontSize: i32, font: raylib.Font, fontSpacing: f32, colour: raylib.Color, yOffset: f32) void {
+    const textWidth = raylib.measureText(text, fontSize);
+    raylib.drawTextEx(
+        font,
+        text,
+        .{ .x = global.screenWidth / 2 - @as(f32, @floatFromInt(@divExact(textWidth, 2))), .y = global.screenHeight / 2 + yOffset },
+        fontSize,
+        fontSpacing,
+        colour,
+    );
+}
