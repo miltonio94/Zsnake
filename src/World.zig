@@ -76,34 +76,19 @@ pub const World = struct {
     fn menuRender(self: World) void {
         _ = self;
         raylib.drawRectangleRec(rectOverlay, overLayColour);
-        utils.drawTextCentered(menuTitleTxt, fontSize, font, fontSpacing, red, -(Global.screenHeight / 3));
+        utils.drawTextCentered(menuTitleTxt, fontSize, font, fontSpacing, orange, -(Global.screenHeight / 3));
     }
 
     fn gameOverOverlay(self: *World) void {
-        const textWidth = raylib.measureText(gameOverTxt, fontSize);
+        _ = self;
         raylib.drawRectangleRec(rectOverlay, overLayColour);
-        raylib.drawTextEx(
-            font,
-            gameOverTxt,
-            .{ .x = self.fontPos.x + @as(f32, @floatFromInt(@divExact(textWidth, 2))), .y = self.fontPos.y },
-            fontSize,
-            fontSpacing,
-            red,
-        );
+        utils.drawTextCentered(gameOverTxt, fontSize, font, fontSpacing, red, -(Global.screenHeight / 3));
     }
 
     fn pauseOverlay(self: *World) void {
-        const textWidth = raylib.measureText(pausedTxt, fontSize);
+        _ = self;
         raylib.drawRectangleRec(rectOverlay, overLayColour);
-        raylib.drawTextEx(
-            font,
-            pausedTxt,
-            // TODO: redo the following
-            .{ .x = self.fontPos.x + @as(f32, @floatFromInt(@divExact(textWidth, 2))), .y = self.fontPos.y },
-            fontSize,
-            fontSpacing,
-            lightBlue,
-        );
+        utils.drawTextCentered(pausedTxt, fontSize, font, fontSpacing, lightBlue, -(Global.screenHeight / 3));
     }
 
     fn moveEntities(self: *World) void {
