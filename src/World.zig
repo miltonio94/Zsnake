@@ -113,6 +113,7 @@ pub const World = struct {
     allocator: utils.Allocator = undefined,
 
     snake: snake.Snake = undefined,
+    fruit: Fruit,
     state: State,
     fontPos: raylib.Vector2 = raylib.Vector2{
         .x = Global.screenWidth / 2,
@@ -132,9 +133,14 @@ pub const World = struct {
                 .x = Global.screenWidth / 2 - 70.0,
                 .y = 100.0,
             },
+            .fruit = Fruit.Init(),
             .dt = raylib.getFrameTime(),
             .allocator = try utils.Allocator.init(),
         };
+
+        while (self.snake.fruitOverlap(self.fruit)) {
+            self.fruit.respawn();
+        }
 
         self.snake = try snake.Snake.init(&self.allocator);
 
@@ -202,6 +208,10 @@ pub const World = struct {
 
                         .restart => {
                             self.snake.reinit();
+                            self.fruit.respawn();
+                            while (self.snake.fruitOverlap(self.fruit)) {
+                                self.fruit.respawn();
+                            }
                             self.state = .play;
                         },
                         .start => {
@@ -252,6 +262,7 @@ pub const World = struct {
     }
 
     inline fn render(self: *World) void {
+        self.fruit.render();
         self.snake.render();
     }
 };

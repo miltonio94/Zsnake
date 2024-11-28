@@ -11,13 +11,12 @@ const Colour = raylib.Color;
 const Keys = raylib.KeyboardKey;
 const print = std.debug.print;
 
-pub const startingSize: f32 = 40.0;
-
 pub const Snake = struct {
     const sectionMaxSize = 50000;
     const headColour = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
     const bodyColour = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
     const initSize: usize = 3;
+    pub const startingSize: f32 = 40.0;
 
     movementSpeed: f32 = 100,
 
@@ -151,6 +150,15 @@ pub const Snake = struct {
                         return true;
                 },
             }
+        }
+        return false;
+    }
+
+    pub inline fn fruitOverlap(self: Snake, fruit: Fruit) bool {
+        var idx: usize = 0;
+        while (idx < self.recBufferLength) : (idx += 1) {
+            if (self.recBuffer[idx].checkCollision(fruit.fruit))
+                return true;
         }
         return false;
     }

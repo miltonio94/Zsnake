@@ -6,7 +6,7 @@ const Colour = raylib.Color;
 pub const Fruit = struct {
     const colour = Colour{ .r = 217, .g = 67, .b = 168, .a = 255 };
 
-    dimension: f32 = 7.75,
+    dimension: f32 = 35.75,
     fruit: raylib.Rectangle,
     visible: bool,
 
@@ -32,7 +32,7 @@ pub const Fruit = struct {
         self.visible = true;
     }
 
-    pub fn draw(self: *Fruit) void {
+    pub fn render(self: *Fruit) void {
         if (self.visible) {
             raylib.drawRectangleRec(self.fruit, colour);
         }
