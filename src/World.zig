@@ -127,7 +127,7 @@ pub const World = struct {
         font = Font.fromMemory("ttf", BitPotionFont, 24, null);
 
         var self = World{
-            .state = .play,
+            .state = .menu,
             .fontPos = raylib.Vector2{
                 .x = Global.screenWidth / 2 - 70.0,
                 .y = 100.0,
@@ -195,7 +195,19 @@ pub const World = struct {
                     }
                 },
                 .select => {
-                    // handle menu logic
+                    switch (menuSeletion) {
+                        .quit => {
+                            gameRunning = false;
+                        },
+
+                        .restart => {
+                            self.snake.reinit();
+                            self.state = .play;
+                        },
+                        .start => {
+                            self.state = .play;
+                        },
+                    }
                 },
                 .direction => |direction| {
                     if (self.state == .play) {

@@ -17,6 +17,7 @@ pub const Snake = struct {
     const sectionMaxSize = 50000;
     const headColour = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
     const bodyColour = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
+    const initSize: usize = 3;
 
     movementSpeed: f32 = 100,
 
@@ -26,13 +27,47 @@ pub const Snake = struct {
     directionBuffer: []utils.Direction = undefined,
     head: Head = undefined,
 
-    sectionBufferLength: usize = 3,
+    sectionBufferLength: usize = 0,
     recBufferLength: usize = 0,
     directionBufferLength: usize = 0,
+
+    pub inline fn reinit(self: *Snake) void {
+        self.head = Head{
+            .recIdx = 0,
+            .directionIdx = 0,
+        };
+        self.recBuffer[0] = Rectangle{
+            .x = (Global.screenWidth / 2),
+            .y = Global.screenHeight / 2,
+            .width = startingSize,
+            .height = startingSize,
+        };
+        self.directionBuffer[0] = utils.Direction.left;
+
+        self.sectionBufferLength = initSize;
+        for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
+            const i_f32: f32 = @floatFromInt(idx + 1);
+            self.recBuffer[idx + 1] = Rectangle{
+                .x = (Global.screenWidth / 2) + (startingSize * i_f32),
+                .y = Global.screenHeight / 2,
+                .width = startingSize,
+                .height = startingSize,
+            };
+            section.* = Section{
+                .recIdx = idx + 1,
+                .directionIdx = idx + 1,
+                .targetPool = self.targetBuffer.ptr + (idx * 50),
+            };
+            self.directionBuffer[idx + 1] = utils.Direction.left;
+        }
+        self.recBufferLength = self.sectionBufferLength + 1;
+        self.directionBufferLength = self.sectionBufferLength + 1;
+    }
 
     pub inline fn init(allocator: *utils.Allocator) !Snake {
         var self = Snake{};
 
+        self.sectionBufferLength = initSize;
         self.recBuffer = try allocator.alloc(Rectangle, sectionMaxSize);
         self.sectionBuffer = try allocator.alloc(Section, sectionMaxSize);
         self.targetBuffer = try allocator.alloc(Target, sectionMaxSize * 50);
