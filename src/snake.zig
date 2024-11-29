@@ -1,20 +1,17 @@
 const std = @import("std");
 const raylib = @import("raylib");
-const Global = @import("global.zig");
+const global = @import("global.zig");
 const runMode = @import("builtin").mode;
 const Fruit = @import("fruit.zig").Fruit;
 const utils = @import("utils.zig");
 
 const OptimizedMode = std.builtin.OptimizeMode;
 const Rectangle = raylib.Rectangle;
-const Colour = raylib.Color;
 const Keys = raylib.KeyboardKey;
 const print = std.debug.print;
 
 pub const Snake = struct {
     const sectionMaxSize = 50000;
-    const headColour = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
-    const bodyColour = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
     const initSize: usize = 3;
     pub const startingSize: f32 = 40.0;
 
@@ -36,8 +33,8 @@ pub const Snake = struct {
             .directionIdx = 0,
         };
         self.recBuffer[0] = Rectangle{
-            .x = (Global.screenWidth / 2),
-            .y = Global.screenHeight / 2,
+            .x = (global.screenWidth / 2),
+            .y = global.screenHeight / 2,
             .width = startingSize,
             .height = startingSize,
         };
@@ -47,8 +44,8 @@ pub const Snake = struct {
         for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
             const i_f32: f32 = @floatFromInt(idx + 1);
             self.recBuffer[idx + 1] = Rectangle{
-                .x = (Global.screenWidth / 2) + (startingSize * i_f32),
-                .y = Global.screenHeight / 2,
+                .x = (global.screenWidth / 2) + (startingSize * i_f32),
+                .y = global.screenHeight / 2,
                 .width = startingSize,
                 .height = startingSize,
             };
@@ -77,8 +74,8 @@ pub const Snake = struct {
             .directionIdx = 0,
         };
         self.recBuffer[0] = Rectangle{
-            .x = (Global.screenWidth / 2),
-            .y = Global.screenHeight / 2,
+            .x = (global.screenWidth / 2),
+            .y = global.screenHeight / 2,
             .width = startingSize,
             .height = startingSize,
         };
@@ -87,8 +84,8 @@ pub const Snake = struct {
         for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
             const i_f32: f32 = @floatFromInt(idx + 1);
             self.recBuffer[idx + 1] = Rectangle{
-                .x = (Global.screenWidth / 2) + (startingSize * i_f32),
-                .y = Global.screenHeight / 2,
+                .x = (global.screenWidth / 2) + (startingSize * i_f32),
+                .y = global.screenHeight / 2,
                 .width = startingSize,
                 .height = startingSize,
             };
@@ -235,11 +232,11 @@ pub const Snake = struct {
                 self.recBuffer[self.sectionBuffer[i].recIdx],
                 0.45,
                 500,
-                bodyColour,
+                global.yellow,
             );
         }
 
-        raylib.drawRectangleRounded(self.recBuffer[self.head.recIdx], 0.45, 500, headColour);
+        raylib.drawRectangleRounded(self.recBuffer[self.head.recIdx], 0.45, 500, global.orange);
     }
 };
 

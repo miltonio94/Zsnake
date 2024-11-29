@@ -3,7 +3,7 @@ const utils = @import("utils.zig");
 const raylib = @import("raylib");
 const snake = @import("snake.zig");
 const Fruit = @import("fruit.zig").Fruit;
-const Global = @import("global.zig");
+const global = @import("global.zig");
 const builtin = @import("builtin");
 const Font = raylib.Font;
 const currentPath = std.fs.cwd();
@@ -53,13 +53,13 @@ pub const World = struct {
         }
 
         pub inline fn draw(self: MenuSelection) void {
-            const startingPoint = -(Global.screenHeight / 4);
+            const startingPoint = -(global.screenHeight / 4);
             utils.drawTextCentered(
                 "Start",
                 fontSize,
                 font,
                 fontSpacing,
-                if (self == .start) red else yellow,
+                if (self == .start) global.red else global.yellow,
                 startingPoint,
             );
             utils.drawTextCentered(
@@ -67,7 +67,7 @@ pub const World = struct {
                 fontSize,
                 font,
                 fontSpacing,
-                if (self == .restart) red else yellow,
+                if (self == .restart) global.red else global.yellow,
                 startingPoint + 45,
             );
             utils.drawTextCentered(
@@ -75,7 +75,7 @@ pub const World = struct {
                 fontSize,
                 font,
                 fontSpacing,
-                if (self == .quit) red else yellow,
+                if (self == .quit) global.red else global.yellow,
                 startingPoint + 90,
             );
         }
@@ -87,17 +87,11 @@ pub const World = struct {
         play,
         gameOver,
     };
-    const orange = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
-    const yellow = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
-    const backgroundColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 255 };
-    const overLayColour = Colour{ .r = 7, .g = 15, .b = 28, .a = 188 };
-    const lightBlue = Colour{ .r = 93, .g = 178, .b = 248, .a = 255 };
-    const red = Colour{ .r = 234, .g = 61, .b = 84, .a = 255 };
     const rectOverlay = Rectangle{
         .x = 0,
         .y = 0,
-        .width = Global.screenWidth,
-        .height = Global.screenHeight,
+        .width = global.screenWidth,
+        .height = global.screenHeight,
     };
     const pausedTxt = "Paused";
     const menuTitleTxt = "Menu";
@@ -116,8 +110,8 @@ pub const World = struct {
     fruit: Fruit,
     state: State,
     fontPos: raylib.Vector2 = raylib.Vector2{
-        .x = Global.screenWidth / 2,
-        .y = Global.screenHeight / 2,
+        .x = global.screenWidth / 2,
+        .y = global.screenHeight / 2,
     },
 
     pub fn deinit(self: *World) void {
@@ -130,7 +124,7 @@ pub const World = struct {
         var self = World{
             .state = .menu,
             .fontPos = raylib.Vector2{
-                .x = Global.screenWidth / 2 - 70.0,
+                .x = global.screenWidth / 2 - 70.0,
                 .y = 100.0,
             },
             .fruit = Fruit.Init(),
@@ -149,21 +143,21 @@ pub const World = struct {
 
     fn menuRender(self: World) void {
         _ = self;
-        raylib.drawRectangleRec(rectOverlay, overLayColour);
-        utils.drawTextCentered(menuTitleTxt, fontSize, font, fontSpacing, orange, -(Global.screenHeight / 3));
+        raylib.drawRectangleRec(rectOverlay, global.darkBlueWithTransparency);
+        utils.drawTextCentered(menuTitleTxt, fontSize, font, fontSpacing, global.orange, -(global.screenHeight / 3));
         menuSeletion.draw();
     }
 
     fn gameOverOverlay(self: *World) void {
         _ = self;
-        raylib.drawRectangleRec(rectOverlay, overLayColour);
-        utils.drawTextCentered(gameOverTxt, fontSize, font, fontSpacing, red, -(Global.screenHeight / 3));
+        raylib.drawRectangleRec(rectOverlay, global.darkBlueWithTransparency);
+        utils.drawTextCentered(gameOverTxt, fontSize, font, fontSpacing, global.red, -(global.screenHeight / 3));
     }
 
     fn pauseOverlay(self: *World) void {
         _ = self;
-        raylib.drawRectangleRec(rectOverlay, overLayColour);
-        utils.drawTextCentered(pausedTxt, fontSize, font, fontSpacing, lightBlue, -(Global.screenHeight / 3));
+        raylib.drawRectangleRec(rectOverlay, global.darkBlueWithTransparency);
+        utils.drawTextCentered(pausedTxt, fontSize, font, fontSpacing, global.lightBlue, -(global.screenHeight / 3));
     }
 
     fn moveEntities(self: *World) void {
@@ -172,7 +166,7 @@ pub const World = struct {
     }
 
     pub fn run(self: *World) void {
-        raylib.initWindow(Global.screenWidth, Global.screenHeight, "Znake");
+        raylib.initWindow(global.screenWidth, global.screenHeight, "Znake");
         defer raylib.closeWindow();
 
         raylib.setTargetFPS(200);
@@ -233,7 +227,7 @@ pub const World = struct {
             raylib.beginDrawing();
             defer raylib.endDrawing();
 
-            raylib.clearBackground(backgroundColour);
+            raylib.clearBackground(global.darkBlue);
 
             self.render();
 
