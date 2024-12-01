@@ -240,7 +240,7 @@ pub const Snake = struct {
         self.handleQueue();
     }
 
-    pub fn render(self: *Snake) void {
+    pub fn render(self: Snake) void {
         var i: usize = 0;
 
         while (i < self.sectionBufferLength) : (i += 1) {

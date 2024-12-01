@@ -30,7 +30,7 @@ pub const Fruit = struct {
         self.visible = true;
     }
 
-    pub fn render(self: *Fruit) void {
+    pub fn render(self: Fruit) void {
         if (self.visible) {
             raylib.drawRectangleRec(self.fruit, global.pink);
         }
