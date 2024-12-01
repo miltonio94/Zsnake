@@ -101,9 +101,10 @@ pub const World = struct {
     var font: Font = undefined;
     var gameRunning = true;
     var menuSeletion: MenuSelection = .start;
+    var scoreStr: [12]u8 = undefined;
+    var score: i32 = 0;
 
     dt: f32 = 0,
-    movementSpeed: f32 = 100,
     allocator: utils.Allocator = undefined,
 
     snake: snake.Snake = undefined,
@@ -120,6 +121,7 @@ pub const World = struct {
 
     pub fn init() !World {
         font = Font.fromMemory("ttf", BitPotionFont, 24, null);
+        _ = try std.fmt.bufPrint(&scoreStr, "{}", .{score});
 
         var self = World{
             .state = .menu,
@@ -215,6 +217,18 @@ pub const World = struct {
                 .direction => |direction| {
                     if (self.state == .play) {
                         self.snake.update(direction);
+                        if (self.snake.fruitOverlap(self.fruit)) {
+                            score += 10;
+                            self.snake.movementSpeed += 10;
+                            self.fruit.respawn();
+                            while (self.snake.fruitOverlap(self.fruit)) {
+                                self.fruit.respawn();
+                            }
+                            scoreStr = .{0} ** 12;
+                            _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
+                                print("Err: {any}", .{err});
+                            };
+                        }
                     }
                     if (self.state == .menu) {
                         menuSeletion.update(direction);
@@ -229,6 +243,7 @@ pub const World = struct {
             raylib.clearBackground(global.darkBlue);
 
             self.render();
+            renderScore();
 
             switch (self.state) {
                 .paused => {
@@ -254,7 +269,12 @@ pub const World = struct {
         }
     }
 
-    inline fn render(self: *World) void {
+    inline fn renderScore() void {
+        // const textWidth: f32 = @floatFromInt(raylib.measureText("Score " ++ scoreStr, fontSize));
+        raylib.drawTextEx(font, "Score " ++ scoreStr, .{ .x = global.screenWidth - 200, .y = 32 }, fontSize, fontSpacing, global.beige);
+    }
+
+    inline fn render(self: World) void {
         self.fruit.render();
         self.snake.render();
     }
