@@ -127,29 +127,38 @@ pub const Snake = struct {
     }
 
     pub inline fn selfCollision(self: *Snake) bool {
-        const head = self.recBuffer[self.head.recIdx];
-        const direction = self.directionBuffer[self.head.directionIdx];
+        const checkOverlapArea = switch (self.directionBuffer[self.head.directionIdx]) {
+            .up => Rectangle{
+                .x = self.recBuffer[self.head.recIdx].x,
+                .y = self.recBuffer[self.head.recIdx].y,
+                .width = self.recBuffer[self.head.recIdx].width,
+                .height = 1.0,
+            },
+            .down => Rectangle{
+                .x = self.recBuffer[self.head.recIdx].x,
+                .y = self.recBuffer[self.head.recIdx].y + self.recBuffer[self.head.recIdx].height,
+                .width = self.recBuffer[self.head.recIdx].width,
+                .height = 1.0,
+            },
+            .left => Rectangle{
+                .x = self.recBuffer[self.head.recIdx].x,
+                .y = self.recBuffer[self.head.recIdx].y,
+                .width = 1.0,
+                .height = self.recBuffer[self.head.recIdx].height,
+            },
+            .right => Rectangle{
+                .x = self.recBuffer[self.head.recIdx].x + self.recBuffer[self.head.recIdx].width,
+                .y = self.recBuffer[self.head.recIdx].y,
+                .width = 1.0,
+                .height = self.recBuffer[self.head.recIdx].height,
+            },
+        };
 
-        for (self.sectionBuffer[0..self.sectionBufferLength]) |*section| {
+        // NOTE: It's impossible to collide with the first 2 sections, but the collision detectikon is jank
+        for (self.sectionBuffer[2..self.sectionBufferLength]) |*section| {
             const sectionRec = self.recBuffer[section.recIdx];
-            switch (direction) {
-                .up => {
-                    if (head.x == sectionRec.x and head.y == sectionRec.y + sectionRec.height)
-                        return true;
-                },
-                .down => {
-                    if (head.x == sectionRec.x and head.y + head.height == sectionRec.y)
-                        return true;
-                },
-                .left => {
-                    if (head.x == sectionRec.x + sectionRec.width and head.y == sectionRec.y)
-                        return true;
-                },
-                .right => {
-                    if (head.x + head.width == sectionRec.x and head.y == sectionRec.y)
-                        return true;
-                },
-            }
+            if (checkOverlapArea.checkCollision(sectionRec))
+                return true;
         }
         return false;
     }
