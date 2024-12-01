@@ -12,7 +12,7 @@ const print = std.debug.print;
 
 pub const Snake = struct {
     const sectionMaxSize = 50000;
-    const initLength: usize = 3;
+    const initLength: usize = 2;
     pub const startingSize: f32 = 40.0;
 
     movementSpeed: f32 = 100,
@@ -58,6 +58,43 @@ pub const Snake = struct {
         }
         self.recBufferLength = self.sectionBufferLength + 1;
         self.directionBufferLength = self.sectionBufferLength + 1;
+    }
+
+    pub inline fn grow(self: *Snake) void {
+        const section = &self.sectionBuffer[self.sectionBufferLength];
+        const prevSection = &self.sectionBuffer[self.sectionBufferLength - 1];
+        section.* = .{
+            .recIdx = self.recBufferLength,
+            .directionIdx = self.directionBufferLength,
+            .targetPool = self.targetBuffer.ptr + (self.sectionBufferLength * 50),
+        };
+        self.sectionBufferLength += 1;
+        self.recBufferLength += 1;
+        self.directionBufferLength += 1;
+
+        // TODO: Need to copy all targets from prev section to new section
+        var idx: usize = 0;
+        while (idx < prevSection.targetCurrentIdx) : (idx += 1) {
+            section.targetPool[idx] = prevSection.targetPool[idx];
+        }
+
+        self.recBuffer[section.recIdx] = Rectangle{
+            .x = switch (self.directionBuffer[prevSection.directionIdx]) {
+                .up => self.recBuffer[prevSection.recIdx].x,
+                .down => self.recBuffer[prevSection.recIdx].x,
+                .left => self.recBuffer[prevSection.recIdx].x + startingSize,
+                .right => self.recBuffer[prevSection.recIdx].x - startingSize,
+            },
+            .y = switch (self.directionBuffer[prevSection.directionIdx]) {
+                .up => self.recBuffer[prevSection.recIdx].y + startingSize,
+                .down => self.recBuffer[prevSection.recIdx].y - startingSize,
+                .left => self.recBuffer[prevSection.recIdx].y,
+                .right => self.recBuffer[prevSection.recIdx].y,
+            },
+            .width = startingSize,
+            .height = startingSize,
+        };
+        self.directionBuffer[section.directionIdx] = self.directionBuffer[prevSection.directionIdx];
     }
 
     pub inline fn init(allocator: *utils.Allocator) !Snake {
@@ -155,16 +192,14 @@ pub const Snake = struct {
         for (self.sectionBuffer[2..self.sectionBufferLength]) |*section| {
             const sectionRec = self.recBuffer[section.recIdx];
             if (checkOverlapArea.checkCollision(sectionRec)) {
-                print("1/4 of width: {d}\n", .{(self.recBuffer[self.head.recIdx].width * 0.25)});
-                print("1/4 of height: {d}\n", .{(self.recBuffer[self.head.recIdx].height * 0.25)});
-                print("direction {any}\n", .{self.directionBuffer[self.head.directionIdx]});
-                utils.printRecPos("actual head ", self.recBuffer[self.head.recIdx]);
-                utils.printRecPos("head collision area  ", checkOverlapArea);
-                utils.printRecPos("section checking overlap ", sectionRec);
                 return true;
             }
         }
         return false;
+    }
+
+    pub inline fn hasEatenFruit(self: Snake, fruit: Fruit) bool {
+        return fruit.fruit.checkCollision(self.recBuffer[self.head.recIdx]);
     }
 
     pub inline fn fruitOverlap(self: Snake, fruit: Fruit) bool {

@@ -217,7 +217,7 @@ pub const World = struct {
                 .direction => |direction| {
                     if (self.state == .play) {
                         self.snake.update(direction);
-                        if (self.snake.fruitOverlap(self.fruit)) {
+                        if (self.snake.hasEatenFruit(self.fruit)) {
                             score += 10;
                             self.snake.movementSpeed += 10;
                             self.fruit.respawn();
@@ -228,6 +228,8 @@ pub const World = struct {
                             _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
                                 print("Err: {any}", .{err});
                             };
+
+                            self.snake.grow();
                         }
                     }
                     if (self.state == .menu) {

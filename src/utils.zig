@@ -39,6 +39,8 @@ pub inline fn moveRec(rec: *Rectangle, x: f32, y: f32) void {
     rec.y += y;
 }
 
+// TODO: author collision function
+
 pub inline fn moveRecIfNoColision(
     source: *Rectangle,
     check: *Rectangle,
