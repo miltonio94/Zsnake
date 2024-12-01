@@ -13,6 +13,7 @@ const print = std.debug.print;
 pub const Snake = struct {
     const sectionMaxSize = 50000;
     const initLength: usize = 2;
+    const startingSpeed: f32 = 40.0;
     pub const startingSize: f32 = 40.0;
 
     movementSpeed: f32 = 100,
@@ -28,6 +29,8 @@ pub const Snake = struct {
     directionBufferLength: usize = 0,
 
     pub inline fn reinit(self: *Snake) void {
+        self.movementSpeed = startingSpeed;
+
         self.head = Head{
             .recIdx = 0,
             .directionIdx = 0,

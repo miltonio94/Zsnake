@@ -202,6 +202,7 @@ pub const World = struct {
                         },
 
                         .restart => {
+                            score = 0;
                             self.snake.reinit();
                             self.fruit.respawn();
                             while (self.snake.fruitOverlap(self.fruit)) {
@@ -217,26 +218,27 @@ pub const World = struct {
                 .direction => |direction| {
                     if (self.state == .play) {
                         self.snake.update(direction);
-                        if (self.snake.hasEatenFruit(self.fruit)) {
-                            score += 10;
-                            self.snake.movementSpeed += 10;
-                            self.fruit.respawn();
-                            while (self.snake.fruitOverlap(self.fruit)) {
-                                self.fruit.respawn();
-                            }
-                            scoreStr = .{0} ** 12;
-                            _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
-                                print("Err: {any}", .{err});
-                            };
-
-                            self.snake.grow();
-                        }
                     }
                     if (self.state == .menu) {
                         menuSeletion.update(direction);
                     }
                 },
                 else => {},
+            }
+
+            if (self.snake.hasEatenFruit(self.fruit)) {
+                score += 10;
+                self.snake.movementSpeed += 10;
+                self.fruit.respawn();
+                while (self.snake.fruitOverlap(self.fruit)) {
+                    self.fruit.respawn();
+                }
+                scoreStr = .{0} ** 12;
+                _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
+                    print("Err: {any}", .{err});
+                };
+
+                self.snake.grow();
             }
 
             raylib.beginDrawing();
