@@ -172,9 +172,8 @@ pub const World = struct {
         raylib.setTargetFPS(200);
 
         while (gameRunning) {
-            // TODO: Figure out if we can make the fps print only happen if a comp time var is passed through
             if (runMode == .Debug) {
-                print("FPS: {d:.10}\n", .{self.dt});
+                // print("FPS: {d:.10}\n", .{self.dt});
             }
             self.dt = raylib.getFrameTime();
             const command = utils.Command.keyToCommand(raylib.getKeyPressed());

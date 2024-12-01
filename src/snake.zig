@@ -126,26 +126,26 @@ pub const Snake = struct {
     pub inline fn selfCollision(self: *Snake) bool {
         const checkOverlapArea = switch (self.directionBuffer[self.head.directionIdx]) {
             .up => Rectangle{
-                .x = self.recBuffer[self.head.recIdx].x,
+                .x = self.recBuffer[self.head.recIdx].x + (self.recBuffer[self.head.recIdx].width / 4),
                 .y = self.recBuffer[self.head.recIdx].y,
-                .width = self.recBuffer[self.head.recIdx].width,
+                .width = self.recBuffer[self.head.recIdx].width / 4,
                 .height = 1.0,
             },
             .down => Rectangle{
-                .x = self.recBuffer[self.head.recIdx].x,
+                .x = self.recBuffer[self.head.recIdx].x + (self.recBuffer[self.head.recIdx].width / 4),
                 .y = self.recBuffer[self.head.recIdx].y + self.recBuffer[self.head.recIdx].height,
                 .width = self.recBuffer[self.head.recIdx].width,
                 .height = 1.0,
             },
             .left => Rectangle{
                 .x = self.recBuffer[self.head.recIdx].x,
-                .y = self.recBuffer[self.head.recIdx].y,
+                .y = self.recBuffer[self.head.recIdx].y + (self.recBuffer[self.head.recIdx].y / 4),
                 .width = 1.0,
                 .height = self.recBuffer[self.head.recIdx].height,
             },
             .right => Rectangle{
                 .x = self.recBuffer[self.head.recIdx].x + self.recBuffer[self.head.recIdx].width,
-                .y = self.recBuffer[self.head.recIdx].y,
+                .y = self.recBuffer[self.head.recIdx].y + (self.recBuffer[self.head.recIdx].y / 4),
                 .width = 1.0,
                 .height = self.recBuffer[self.head.recIdx].height,
             },
@@ -154,8 +154,10 @@ pub const Snake = struct {
         // NOTE: It's impossible to collide with the first 2 sections, but the collision detectikon is jank
         for (self.sectionBuffer[2..self.sectionBufferLength]) |*section| {
             const sectionRec = self.recBuffer[section.recIdx];
-            if (checkOverlapArea.checkCollision(sectionRec))
+            if (checkOverlapArea.checkCollision(sectionRec)) {
+                print("actualHeadPos: {any}, collisionCheck: {any}\nsection: {any}\n", .{ self.recBuffer[self.head.recIdx], checkOverlapArea, sectionRec });
                 return true;
+            }
         }
         return false;
     }
