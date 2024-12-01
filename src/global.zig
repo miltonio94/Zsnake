@@ -2,6 +2,7 @@ const Colour = @import("raylib").Color;
 
 pub const screenWidth: f32 = 1080;
 pub const screenHeight: f32 = 720;
+
 pub const orange = Colour{ .r = 234, .g = 104, .b = 71, .a = 255 };
 pub const yellow = Colour{ .r = 255, .g = 162, .b = 0, .a = 255 };
 pub const lightBlue = Colour{ .r = 93, .g = 178, .b = 248, .a = 255 };

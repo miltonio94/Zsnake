@@ -161,6 +161,6 @@ pub inline fn drawTextCentered(text: [*:0]const u8, fontSize: i32, font: raylib.
     );
 }
 
-pub inline fn printRecPos(rec: Rectangle) void {
-    std.debug.print("x: {d}", .{});
+pub inline fn printRecPos(prefix: []const u8, rec: Rectangle) void {
+    std.debug.print("{s}x: {d}, y: {d}\n", .{ prefix, rec.x, rec.y });
 }
