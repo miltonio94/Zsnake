@@ -151,6 +151,7 @@ pub const Snake = struct {
             },
         };
 
+        // NOTE: Impossible to collide with first two sections
         for (self.sectionBuffer[2..self.sectionBufferLength]) |*section| {
             const sectionRec = self.recBuffer[section.recIdx];
             if (checkOverlapArea.checkCollision(sectionRec)) {
