@@ -160,3 +160,7 @@ pub inline fn drawTextCentered(text: [*:0]const u8, fontSize: i32, font: raylib.
         colour,
     );
 }
+
+pub inline fn printRecPos(rec: Rectangle) void {
+    std.debug.print("x: {d}", .{});
+}
