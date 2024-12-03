@@ -38,19 +38,12 @@ test "Test snake movement when direction change" {
             .{
                 headRect_ref.y,
                 headRect.y,
-                snake.movementSpeed,
+                snake.acceleration,
                 i_f32,
-                headRect.y + (snake.movementSpeed * i_f32),
+                headRect.y + (snake.acceleration * i_f32),
             },
         );
         // try expect(headRect_ref.y == headRect.y + (snake.movementSpeed * i_f32));
         try expect(true);
     }
 }
-
-// for (1..1000) |i| {
-//     snake.move(1);
-//     const i_f32: f32 = i;
-
-//     std.debug.print("i: {}\n", .{i_f32})
-// }

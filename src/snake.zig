@@ -253,6 +253,7 @@ pub const Snake = struct {
     }
 
     pub inline fn move(self: *Snake, dt: f32) void {
+        // TODO: implement acceleration
         var i: usize = 0;
 
         self.handleQueue();
