@@ -13,7 +13,7 @@ const print = std.debug.print;
 pub const Snake = struct {
     const sectionMaxSize = 50000;
     const initLength: usize = 2;
-    const startingSpeed: f32 = 40.0;
+    const startingSpeed: f32 = 100.0;
     pub const startingSize: f32 = 40.0;
 
     movementSpeed: f32 = 100,
@@ -143,7 +143,7 @@ pub const Snake = struct {
         return self;
     }
 
-    pub inline fn update(self: *Snake, direction: utils.Direction) void {
+    pub inline fn directionChange(self: *Snake, direction: utils.Direction) void {
         if (self.directionBuffer[self.head.directionIdx] == direction or
             self.directionBuffer[self.head.directionIdx] == direction.opposite()) return;
 

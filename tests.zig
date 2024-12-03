@@ -28,7 +28,7 @@ test "Test snake movement when direction change" {
         _ = headStartingX;
         _ = headStartingY;
         if (i == 1) {
-            snake.update(.up);
+            snake.directionChange(.up);
         }
         snake.move(1);
         const i_f32: f32 = @floatFromInt(i);

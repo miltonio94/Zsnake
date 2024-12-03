@@ -15,8 +15,6 @@ const Keys = raylib.KeyboardKey;
 const Rectangle = raylib.Rectangle;
 const print = std.debug.print;
 const BitPotionFont = @embedFile("./assets/BitPotion.ttf");
-const FixedBufferAllocator = std.heap.FixedBufferAllocator;
-const pager = std.heap.page_allocator;
 
 pub const World = struct {
     const MenuSelection = enum {
@@ -86,6 +84,7 @@ pub const World = struct {
         menu,
         play,
         gameOver,
+        restart,
     };
     const rectOverlay = Rectangle{
         .x = 0,
@@ -174,13 +173,11 @@ pub const World = struct {
         raylib.setTargetFPS(200);
 
         while (gameRunning) {
-            if (runMode == .Debug) {
-                // print("FPS: {d:.10}\n", .{self.dt});
-            }
             self.dt = raylib.getFrameTime();
-            const command = utils.Command.keyToCommand(raylib.getKeyPressed());
+            var direction: ?utils.Direction = null;
 
-            switch (command) {
+            // Input handling
+            switch (utils.Command.keyToCommand(raylib.getKeyPressed())) {
                 .pause_toggle => {
                     if (self.state == .play) {
                         self.state = .paused;
@@ -202,52 +199,75 @@ pub const World = struct {
                         },
 
                         .restart => {
-                            score = 0;
-                            self.snake.reinit();
-                            self.fruit.respawn();
-                            while (self.snake.fruitOverlap(self.fruit)) {
-                                self.fruit.respawn();
-                            }
-                            self.state = .play;
+                            self.state = .restart;
                         },
                         .start => {
                             self.state = .play;
                         },
                     }
                 },
-                .direction => |direction| {
-                    if (self.state == .play) {
-                        self.snake.update(direction);
-                    }
-                    if (self.state == .menu) {
-                        menuSeletion.update(direction);
-                    }
+                .direction => |direction_| {
+                    direction = direction_;
                 },
                 else => {},
             }
 
-            if (self.snake.hasEatenFruit(self.fruit)) {
-                score += 10;
-                self.snake.movementSpeed += 10;
-                self.fruit.respawn();
-                while (self.snake.fruitOverlap(self.fruit)) {
-                    self.fruit.respawn();
-                }
-                scoreStr = .{0} ** 12;
-                _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
-                    print("Err: {any}", .{err});
-                };
+            // Update
+            switch (self.state) {
+                .play => {
+                    if (direction) |direction_| {
+                        self.snake.directionChange(direction_);
+                    }
 
-                self.snake.grow();
+                    if (self.snake.selfCollision()) {
+                        self.state = .gameOver;
+                    }
+
+                    if (self.snake.hasEatenFruit(self.fruit)) {
+                        score += 10;
+                        self.snake.movementSpeed += 10;
+                        self.fruit.respawn();
+                        while (self.snake.fruitOverlap(self.fruit)) {
+                            self.fruit.respawn();
+                        }
+                        scoreStr = .{0} ** 12;
+                        _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
+                            print("Err: {any}", .{err});
+                        };
+
+                        self.snake.grow();
+                    }
+
+                    self.moveEntities();
+                },
+                .menu => {
+                    if (direction) |direction_| {
+                        menuSeletion.update(direction_);
+                    }
+                },
+                .gameOver => {},
+                .restart => {
+                    score = 0;
+                    scoreStr = .{0} ** 12;
+                    _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
+                        print("Err: {any}", .{err});
+                    };
+
+                    self.snake.reinit();
+                    self.fruit.respawn();
+                    while (self.snake.fruitOverlap(self.fruit)) {
+                        self.fruit.respawn();
+                    }
+                    self.state = .play;
+                },
+                .paused => {},
             }
 
+            // Draw
             raylib.beginDrawing();
             defer raylib.endDrawing();
 
             raylib.clearBackground(global.darkBlue);
-
-            self.render();
-            renderScore();
 
             switch (self.state) {
                 .paused => {
@@ -260,21 +280,22 @@ pub const World = struct {
                     self.menuRender();
                 },
                 .play => {
-                    if (self.snake.selfCollision()) {
-                        self.state = .gameOver;
-                    }
-                    self.moveEntities();
+                    self.render();
+                    renderScore();
                 },
+                else => {},
             }
 
             if (runMode == .Debug) {
                 raylib.drawFPS(5, 5);
             }
         }
+        if (runMode == .Debug) {
+            print("FPS: {d:.10}\n", .{self.dt});
+        }
     }
 
     inline fn renderScore() void {
-        // const textWidth: f32 = @floatFromInt(raylib.measureText("Score " ++ scoreStr, fontSize));
         raylib.drawTextEx(font, "Score " ++ scoreStr, .{ .x = global.screenWidth - 200, .y = 32 }, fontSize, fontSpacing, global.beige);
     }
 
