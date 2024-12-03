@@ -102,6 +102,7 @@ pub const World = struct {
     var menuSeletion: MenuSelection = .start;
     var scoreStr: [12]u8 = undefined;
     var score: i32 = 0;
+    var newDirection: ?utils.Direction = null;
 
     dt: f32 = 0,
     allocator: utils.Allocator = undefined,
@@ -142,20 +143,18 @@ pub const World = struct {
         return self;
     }
 
-    fn menuRender(self: World) void {
-        _ = self;
+    fn menuRender() void {
         raylib.drawRectangleRec(rectOverlay, global.darkBlueWithTransparency);
         utils.drawTextCentered(menuTitleTxt, fontSize, font, fontSpacing, global.orange, -(global.screenHeight / 3));
         menuSeletion.draw();
     }
 
-    fn gameOverOverlay(self: *World) void {
-        _ = self;
+    fn gameOverOverlay() void {
         raylib.drawRectangleRec(rectOverlay, global.darkBlueWithTransparency);
         utils.drawTextCentered(gameOverTxt, fontSize, font, fontSpacing, global.red, -(global.screenHeight / 3));
     }
 
-    fn pauseOverlay(self: *World) void {
+    fn pauseOverlay(self: World) void {
         _ = self;
         raylib.drawRectangleRec(rectOverlay, global.darkBlueWithTransparency);
         utils.drawTextCentered(pausedTxt, fontSize, font, fontSpacing, global.lightBlue, -(global.screenHeight / 3));
@@ -174,129 +173,105 @@ pub const World = struct {
 
         while (gameRunning) {
             self.dt = raylib.getFrameTime();
-            var direction: ?utils.Direction = null;
 
-            // Input handling
-            switch (utils.Command.keyToCommand(raylib.getKeyPressed())) {
-                .pause_toggle => {
-                    if (self.state == .play) {
-                        self.state = .paused;
-                    } else {
+            self.handleInput();
+            self.update();
+            self.render();
+        }
+    }
+
+    inline fn handleInput(self: *World) void {
+        newDirection = null;
+
+        switch (utils.Command.keyToCommand(raylib.getKeyPressed())) {
+            .pause_toggle => {
+                if (self.state == .play) {
+                    self.state = .paused;
+                } else {
+                    self.state = .play;
+                }
+            },
+            .menu_toggle => {
+                if (self.state == .menu) {
+                    self.state = .play;
+                } else {
+                    self.state = .menu;
+                }
+            },
+            .select => {
+                switch (menuSeletion) {
+                    .quit => {
+                        gameRunning = false;
+                    },
+
+                    .restart => {
+                        self.state = .restart;
+                    },
+                    .start => {
                         self.state = .play;
-                    }
-                },
-                .menu_toggle => {
-                    if (self.state == .menu) {
-                        self.state = .play;
-                    } else {
-                        self.state = .menu;
-                    }
-                },
-                .select => {
-                    switch (menuSeletion) {
-                        .quit => {
-                            gameRunning = false;
-                        },
+                    },
+                }
+            },
+            .direction => |direction| {
+                newDirection = direction;
+            },
+            else => {},
+        }
+    }
 
-                        .restart => {
-                            self.state = .restart;
-                        },
-                        .start => {
-                            self.state = .play;
-                        },
-                    }
-                },
-                .direction => |direction_| {
-                    direction = direction_;
-                },
-                else => {},
-            }
+    inline fn update(self: *World) void {
+        switch (self.state) {
+            .play => {
+                if (self.snake.selfCollision()) {
+                    self.state = .gameOver;
+                }
 
-            // Update
-            switch (self.state) {
-                .play => {
-                    if (self.snake.selfCollision()) {
-                        self.state = .gameOver;
-                    }
+                if (self.snake.hasEatenFruit(self.fruit)) {
+                    score += 10;
+                    if (self.snake.acceleration == 1) {
+                        self.snake.acceleration += 1;
+                    } else self.snake.acceleration += 10;
 
-                    if (self.snake.hasEatenFruit(self.fruit)) {
-                        score += 10;
-                        if (self.snake.acceleration == 1) {
-                            self.snake.acceleration += 1;
-                        } else self.snake.acceleration += 10;
-
+                    self.fruit.respawn();
+                    while (self.snake.fruitOverlap(self.fruit)) {
                         self.fruit.respawn();
-                        while (self.snake.fruitOverlap(self.fruit)) {
-                            self.fruit.respawn();
-                        }
-
-                        scoreStr = .{0} ** 12;
-                        _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
-                            print("Err: {any}", .{err});
-                        };
-
-                        self.snake.grow();
                     }
 
-                    if (direction) |direction_| {
-                        self.snake.directionChange(direction_);
-                    }
-
-                    self.moveEntities();
-                },
-                .menu => {
-                    if (direction) |direction_| {
-                        menuSeletion.update(direction_);
-                    }
-                },
-                .gameOver => {},
-                .restart => {
-                    score = 0;
                     scoreStr = .{0} ** 12;
                     _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
                         print("Err: {any}", .{err});
                     };
 
-                    self.snake.reinit();
+                    self.snake.grow();
+                }
+
+                if (newDirection) |direction| {
+                    self.snake.directionChange(direction);
+                }
+
+                self.moveEntities();
+            },
+            .menu => {
+                if (newDirection) |direction| {
+                    menuSeletion.update(direction);
+                }
+            },
+            .gameOver => {},
+            .restart => {
+                score = 0;
+                scoreStr = .{0} ** 12;
+                _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
+                    print("Err: {any}", .{err});
+                };
+
+                self.snake.reinit();
+                self.fruit.respawn();
+                while (self.snake.fruitOverlap(self.fruit)) {
                     self.fruit.respawn();
-                    while (self.snake.fruitOverlap(self.fruit)) {
-                        self.fruit.respawn();
-                    }
-                    self.state = .play;
-                },
-                .paused => {},
-            }
-
-            // Draw
-            raylib.beginDrawing();
-            defer raylib.endDrawing();
-
-            raylib.clearBackground(global.darkBlue);
-
-            switch (self.state) {
-                .paused => {
-                    self.pauseOverlay();
-                },
-                .gameOver => {
-                    self.gameOverOverlay();
-                },
-                .menu => {
-                    self.menuRender();
-                },
-                .play => {
-                    self.render();
-                    renderScore();
-                },
-                else => {},
-            }
-
-            if (runMode == .Debug) {
-                raylib.drawFPS(5, 5);
-            }
-
-            if (runMode == .Debug) {
-                print("FPS: {d:.10}\n", .{self.dt});
-            }
+                }
+                self.state = .play;
+            },
+            .paused => {},
         }
     }
 
@@ -305,7 +280,35 @@ pub const World = struct {
     }
 
     inline fn render(self: World) void {
-        self.fruit.render();
-        self.snake.render();
+        raylib.beginDrawing();
+        defer raylib.endDrawing();
+
+        raylib.clearBackground(global.darkBlue);
+
+        switch (self.state) {
+            .paused => {
+                self.pauseOverlay();
+            },
+            .gameOver => {
+                gameOverOverlay();
+            },
+            .menu => {
+                menuRender();
+            },
+            .play => {
+                renderScore();
+                self.fruit.render();
+                self.snake.render();
+            },
+            else => {},
+        }
+
+        if (runMode == .Debug) {
+            raylib.drawFPS(5, 5);
+        }
+
+        if (runMode == .Debug) {
+            print("FPS: {d:.10}\n", .{self.dt});
+        }
     }
 };
