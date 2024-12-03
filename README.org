@@ -19,23 +19,24 @@ In Znake, the snake does not traverse the plain in a ridgid grid manner, but rat
 
 
 * Pending tasks :todo:
-*** TODO Figure out how to have different GL targets other then Wayland
-*** TODO Create menu sytem
-*** TODO Create highscore system
-*** TODO Fruit eating
-*** TODO Skin the snake with a sprite
-*** TODO Skin the fruit with sprite
-*** TODO Explore zoom feature
-*** TODO Refine movement
-**** DONE Make movement frame independent
+*** [ ] Figure out how to have different GL targets other then Wayland
+*** [X] Create menu sytem
+*** [ ] Create highscore system
+*** [X] Fruit eating
+*** [ ] Skin the snake with a sprite
+*** [ ] Skin the fruit with sprite
+*** [ ] Explore zoom feature
+*** [ ] Refine movement
+**** [X] Make movement frame independent
 - [[https://thatgamesguy.co.uk/cpp-game-dev-3/][Framerate independent movement article]]
-**** TODO Make so segment do not move if there's going to be an overlap
-**** TODO Make it so head will not move if it'll have any overlap with a segment
+**** [ ] Implement acceleration
+**** [X] Make so segment do not move if there's going to be an overlap
+**** [X] Make it so head will not move if it'll have any overlap with a segment
 - If it does, game over
-*** TODO Explore different fruits doing different things
-- Speed fruit
-- Growth fruit
-- Shrink fruit
-- Slow fruit
-*** TODO Grass tiles for the background
-*** TODO Refactor in a more data oriented way
+*** [ ] Explore different fruits doing different things
+- [ ] Speed fruit
+- [ ] Growth fruit
+- [ ] Shrink fruit
+- [ ] Slow fruit
+*** [ ] Grass tiles for the background
+*** [ ] Refactor in a more data oriented way
