@@ -12,11 +12,12 @@ const print = std.debug.print;
 
 pub const Snake = struct {
     const sectionMaxSize = 50000;
-    const initLength: usize = 2;
+    const initLength: usize = 9;
     const startingSpeed: f32 = 100.0;
+    const movement: f32 = 1.0;
     pub const startingSize: f32 = 40.0;
 
-    movementSpeed: f32 = 100,
+    acceleration: f32 = 100,
 
     recBuffer: []Rectangle = undefined,
     sectionBuffer: []Section = undefined,
@@ -29,7 +30,7 @@ pub const Snake = struct {
     directionBufferLength: usize = 0,
 
     pub inline fn reinit(self: *Snake) void {
-        self.movementSpeed = startingSpeed;
+        // self.movementSpeed = startingSpeed;
 
         self.head = Head{
             .recIdx = 0,
@@ -216,11 +217,27 @@ pub const Snake = struct {
 
     inline fn handleQueue(self: *Snake) void {
         for (self.sectionBuffer[0..self.sectionBufferLength]) |*section| {
-            if (self.recBuffer[section.recIdx].y >= (section.targetPool[0].position.y - 1.05) and
-                self.recBuffer[section.recIdx].y <= (section.targetPool[0].position.y + 1.05) and
-                self.recBuffer[section.recIdx].x >= (section.targetPool[0].position.x - 1.05) and
-                self.recBuffer[section.recIdx].x <= (section.targetPool[0].position.x + 1.05))
-            {
+            const collisionArea = switch (self.directionBuffer[section.directionIdx]) {
+                .up => Rectangle{
+                    .x = section.targetPool[0].position.x,
+                    .y = section.targetPool[0].position.y + (self.recBuffer[section.recIdx].height - 1),
+                    .width = 2,
+                    .height = 2,
+                },
+                .right => Rectangle{
+                    .x = section.targetPool[0].position.x + (self.recBuffer[section.recIdx].width - 2) - 1,
+                    .y = section.targetPool[0].position.y,
+                    .width = 2,
+                    .height = 2,
+                },
+                else => Rectangle{
+                    .x = section.targetPool[0].position.x,
+                    .y = section.targetPool[0].position.y,
+                    .width = 2,
+                    .height = 2,
+                },
+            };
+            if (self.recBuffer[section.recIdx].checkCollision(collisionArea)) {
                 self.recBuffer[section.recIdx].x = section.targetPool[0].position.x;
                 self.recBuffer[section.recIdx].y = section.targetPool[0].position.y;
 
@@ -238,16 +255,18 @@ pub const Snake = struct {
     pub inline fn move(self: *Snake, dt: f32) void {
         var i: usize = 0;
 
+        self.handleQueue();
+
         utils.moveRec(
             &self.recBuffer[self.head.recIdx],
             switch (self.directionBuffer[self.head.directionIdx]) {
-                .left => -(self.movementSpeed * dt),
-                .right => (self.movementSpeed * dt),
+                .left => -(movement * dt),
+                .right => (movement * dt),
                 else => 0,
             },
             switch (self.directionBuffer[self.head.directionIdx]) {
-                .up => -(self.movementSpeed * dt),
-                .down => (self.movementSpeed * dt),
+                .up => -(movement * dt),
+                .down => (movement * dt),
                 else => 0,
             },
         );
@@ -261,21 +280,19 @@ pub const Snake = struct {
                 prevRec,
                 self.directionBuffer[self.sectionBuffer[i].directionIdx],
                 switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
-                    .left => -(self.movementSpeed * dt),
-                    .right => (self.movementSpeed * dt),
+                    .left => -(movement * dt),
+                    .right => (movement * dt),
                     else => 0,
                 },
                 switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
-                    .up => -(self.movementSpeed * dt),
-                    .down => (self.movementSpeed * dt),
+                    .up => -(movement * dt),
+                    .down => (movement * dt),
                     else => 0,
                 },
             );
             prevRec = &self.recBuffer[self.sectionBuffer[i].recIdx];
             utils.teleport(&self.recBuffer[self.sectionBuffer[i].recIdx]);
         }
-
-        self.handleQueue();
     }
 
     pub fn render(self: Snake) void {

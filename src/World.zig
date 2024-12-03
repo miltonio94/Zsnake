@@ -215,27 +215,31 @@ pub const World = struct {
             // Update
             switch (self.state) {
                 .play => {
-                    if (direction) |direction_| {
-                        self.snake.directionChange(direction_);
-                    }
-
                     if (self.snake.selfCollision()) {
                         self.state = .gameOver;
                     }
 
                     if (self.snake.hasEatenFruit(self.fruit)) {
                         score += 10;
-                        self.snake.movementSpeed += 10;
+                        if (self.snake.acceleration == 1) {
+                            self.snake.acceleration += 1;
+                        } else self.snake.acceleration += 10;
+
                         self.fruit.respawn();
                         while (self.snake.fruitOverlap(self.fruit)) {
                             self.fruit.respawn();
                         }
+
                         scoreStr = .{0} ** 12;
                         _ = std.fmt.bufPrint(&scoreStr, "{}", .{score}) catch |err| {
                             print("Err: {any}", .{err});
                         };
 
                         self.snake.grow();
+                    }
+
+                    if (direction) |direction_| {
+                        self.snake.directionChange(direction_);
                     }
 
                     self.moveEntities();
@@ -289,9 +293,10 @@ pub const World = struct {
             if (runMode == .Debug) {
                 raylib.drawFPS(5, 5);
             }
-        }
-        if (runMode == .Debug) {
-            print("FPS: {d:.10}\n", .{self.dt});
+
+            if (runMode == .Debug) {
+                print("FPS: {d:.10}\n", .{self.dt});
+            }
         }
     }
 
