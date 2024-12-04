@@ -110,10 +110,6 @@ pub const World = struct {
     snake: snake.Snake = undefined,
     fruit: Fruit,
     state: State,
-    fontPos: raylib.Vector2 = raylib.Vector2{
-        .x = global.screenWidth / 2,
-        .y = global.screenHeight / 2,
-    },
 
     pub fn deinit(self: *World) void {
         self.allocator.deinit();
@@ -125,10 +121,6 @@ pub const World = struct {
 
         var self = World{
             .state = .menu,
-            .fontPos = raylib.Vector2{
-                .x = global.screenWidth / 2 - 70.0,
-                .y = 100.0,
-            },
             .fruit = Fruit.Init(),
             .dt = raylib.getFrameTime(),
             .allocator = try utils.Allocator.init(),
@@ -222,15 +214,15 @@ pub const World = struct {
     inline fn update(self: *World) void {
         switch (self.state) {
             .play => {
+                self.moveEntities();
+
                 if (self.snake.selfCollision()) {
                     self.state = .gameOver;
                 }
 
                 if (self.snake.hasEatenFruit(self.fruit)) {
                     score += 10;
-                    if (self.snake.acceleration == 1) {
-                        self.snake.acceleration += 1;
-                    } else self.snake.acceleration += 10;
+                    self.snake.acceleration += @as(f32, @floatFromInt(score)) * 0.02;
 
                     self.fruit.respawn();
                     while (self.snake.fruitOverlap(self.fruit)) {
@@ -248,8 +240,6 @@ pub const World = struct {
                 if (newDirection) |direction| {
                     self.snake.directionChange(direction);
                 }
-
-                self.moveEntities();
             },
             .menu => {
                 if (newDirection) |direction| {
