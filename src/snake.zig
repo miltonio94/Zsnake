@@ -11,57 +11,105 @@ const Keys = raylib.KeyboardKey;
 const print = std.debug.print;
 
 pub const Snake = struct {
-    const sectionMaxSize = 50000;
+    const sectionMaxSize = 500;
     const initLength: usize = 2;
-    // TODO: remove this
-    const startingSpeed: f32 = 100.0;
     const movement: f32 = 10.0;
-    const startingSize: f32 = 40.0;
+    const startingDimension: f32 = 40.0;
 
     acceleration: f32 = 1,
 
-    recBuffer: []Rectangle = undefined,
+    posBuffer: []f32 = undefined,
     sectionBuffer: []Section = undefined,
     targetBuffer: []Target = undefined,
     directionBuffer: []utils.Direction = undefined,
     head: Head = undefined,
 
     sectionBufferLength: usize = 0,
-    recBufferLength: usize = 0,
+    posBufferLength: usize = 0,
     directionBufferLength: usize = 0,
 
-    pub inline fn reinit(self: *Snake) void {
-        // self.movementSpeed = startingSpeed;
-
-        self.head = Head{
-            .recIdx = 0,
-            .directionIdx = 0,
-        };
-        self.recBuffer[0] = Rectangle{
-            .x = (global.screenWidth / 2),
-            .y = global.screenHeight / 2,
-            .width = startingSize,
-            .height = startingSize,
-        };
-        self.directionBuffer[0] = utils.Direction.left;
+    pub inline fn init(allocator: *utils.Allocator) !Snake {
+        var self = Snake{};
 
         self.sectionBufferLength = initLength;
+        self.posBuffer = try allocator.alloc(f32, sectionMaxSize + 2);
+        self.sectionBuffer = try allocator.alloc(Section, sectionMaxSize);
+        self.targetBuffer = try allocator.alloc(Target, sectionMaxSize * 50);
+        self.directionBuffer = try allocator.alloc(utils.Direction, sectionMaxSize + 1);
+
+        self.head = Head{
+            .positionIdx = 0,
+            .directionIdx = 0,
+        };
+        self.posBuffer[0] = (global.screenWidth / 2);
+        self.posBuffer[1] = global.screenHeight / 2;
+
+        // self.posBuffer[0] = Rectangle{
+        //     .x = (global.screenWidth / 2),
+        //     .y = global.screenHeight / 2,
+        //     .width = startingDimension,
+        //     .height = startingDimension,
+        // };
+        self.directionBuffer[0] = utils.Direction.left;
         for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
             const i_f32: f32 = @floatFromInt(idx + 1);
-            self.recBuffer[idx + 1] = Rectangle{
-                .x = (global.screenWidth / 2) + (startingSize * i_f32),
-                .y = global.screenHeight / 2,
-                .width = startingSize,
-                .height = startingSize,
-            };
+            self.posBuffer[(idx * 2) + 2] = (global.screenWidth / 2) + (startingDimension * i_f32);
+            self.posBuffer[(idx * 2) + 3] = global.screenHeight / 2;
+            // self.posBuffer[(idx + 2) * 2] = Rectangle{
+            //     .x = (global.screenWidth / 2) + (startingDimension * i_f32),
+            //     .y = global.screenHeight / 2,
+            //     .width = startingDimension,
+            //     .height = startingDimension,
+            // };
             section.* = Section{
-                .recIdx = idx + 1,
+                .posIdx = (idx * 2) + 2,
                 .directionIdx = idx + 1,
                 .targetPool = self.targetBuffer.ptr + (idx * 50),
             };
             self.directionBuffer[idx + 1] = utils.Direction.left;
         }
-        self.recBufferLength = self.sectionBufferLength + 1;
+
+        self.posBufferLength = (self.sectionBufferLength + 1) * 2;
+        self.directionBufferLength = self.sectionBufferLength + 1;
+
+        return self;
+    }
+
+    pub inline fn reinit(self: *Snake) void {
+        self.head = Head{
+            .positionIdx = 0,
+            .directionIdx = 0,
+        };
+        self.posBuffer[0] = (global.screenWidth / 2);
+        self.posBuffer[1] = global.screenHeight / 2;
+        // self.posBuffer[0] = Rectangle{
+        //     .x = (global.screenWidth / 2),
+        //     .y = global.screenHeight / 2,
+        //     .width = startingDimension,
+        //     .height = startingDimension,
+        // };
+        self.directionBuffer[0] = utils.Direction.left;
+
+        self.sectionBufferLength = initLength;
+        for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
+            const i_f32: f32 = @floatFromInt(idx + 1);
+            // self.posBuffer[idx + 1] = Rectangle{
+            //     .x = (global.screenWidth / 2) + (startingDimension * i_f32),
+            //     .y = global.screenHeight / 2,
+            //     .width = startingDimension,
+            //     .height = startingDimension,
+            // };
+            self.posBuffer[(idx * 2) + 2] = (global.screenWidth / 2) + (startingDimension * i_f32);
+            self.posBuffer[(idx * 2) + 3] = global.screenHeight / 2;
+
+            section.* = Section{
+                .posIdx = (idx * 2) + 2,
+                .directionIdx = idx + 1,
+                .targetPool = self.targetBuffer.ptr + (idx * 50),
+            };
+            self.directionBuffer[idx + 1] = utils.Direction.left;
+        }
+        self.posBufferLength = (self.sectionBufferLength + 1) * 2;
         self.directionBufferLength = self.sectionBufferLength + 1;
     }
 
@@ -69,12 +117,12 @@ pub const Snake = struct {
         const section = &self.sectionBuffer[self.sectionBufferLength];
         const prevSection = &self.sectionBuffer[self.sectionBufferLength - 1];
         section.* = .{
-            .recIdx = self.recBufferLength,
+            .posIdx = self.posBufferLength,
             .directionIdx = self.directionBufferLength,
             .targetPool = self.targetBuffer.ptr + (self.sectionBufferLength * 50),
         };
         self.sectionBufferLength += 1;
-        self.recBufferLength += 1;
+        self.posBufferLength += 2;
         self.directionBufferLength += 1;
 
         // TODO: Need to copy all targets from prev section to new section
@@ -83,66 +131,35 @@ pub const Snake = struct {
             section.targetPool[idx] = prevSection.targetPool[idx];
         }
 
-        self.recBuffer[section.recIdx] = Rectangle{
-            .x = switch (self.directionBuffer[prevSection.directionIdx]) {
-                .up => self.recBuffer[prevSection.recIdx].x,
-                .down => self.recBuffer[prevSection.recIdx].x,
-                .left => self.recBuffer[prevSection.recIdx].x + startingSize,
-                .right => self.recBuffer[prevSection.recIdx].x - startingSize,
-            },
-            .y = switch (self.directionBuffer[prevSection.directionIdx]) {
-                .up => self.recBuffer[prevSection.recIdx].y + startingSize,
-                .down => self.recBuffer[prevSection.recIdx].y - startingSize,
-                .left => self.recBuffer[prevSection.recIdx].y,
-                .right => self.recBuffer[prevSection.recIdx].y,
-            },
-            .width = startingSize,
-            .height = startingSize,
+        self.posBuffer[section.posIdx] = switch (self.directionBuffer[prevSection.directionIdx]) {
+            .up => self.posBuffer[prevSection.posIdx].x,
+            .down => self.posBuffer[prevSection.posIdx].x,
+            .left => self.posBuffer[prevSection.posIdx].x + startingDimension,
+            .right => self.posBuffer[prevSection.posIdx].x - startingDimension,
         };
+        self.posBuffer[section.posIdx + 1] = switch (self.directionBuffer[prevSection.directionIdx]) {
+            .up => self.posBuffer[prevSection.posIdx].y + startingDimension,
+            .down => self.posBuffer[prevSection.posIdx].y - startingDimension,
+            .left => self.posBuffer[prevSection.posIdx].y,
+            .right => self.posBuffer[prevSection.posIdx].y,
+        };
+        // self.posBuffer[section.posIdx] = Rectangle{
+        //     .x = switch (self.directionBuffer[prevSection.directionIdx]) {
+        //         .up => self.posBuffer[prevSection.posIdx].x,
+        //         .down => self.posBuffer[prevSection.posIdx].x,
+        //         .left => self.posBuffer[prevSection.posIdx].x + startingDimension,
+        //         .right => self.posBuffer[prevSection.posIdx].x - startingDimension,
+        //     },
+        //     .y = switch (self.directionBuffer[prevSection.directionIdx]) {
+        //         .up => self.posBuffer[prevSection.posIdx].y + startingDimension,
+        //         .down => self.posBuffer[prevSection.posIdx].y - startingDimension,
+        //         .left => self.posBuffer[prevSection.posIdx].y,
+        //         .right => self.posBuffer[prevSection.posIdx].y,
+        //     },
+        //     .width = startingDimension,
+        //     .height = startingDimension,
+        // };
         self.directionBuffer[section.directionIdx] = self.directionBuffer[prevSection.directionIdx];
-    }
-
-    pub inline fn init(allocator: *utils.Allocator) !Snake {
-        var self = Snake{};
-
-        self.sectionBufferLength = initLength;
-        self.recBuffer = try allocator.alloc(Rectangle, sectionMaxSize);
-        self.sectionBuffer = try allocator.alloc(Section, sectionMaxSize);
-        self.targetBuffer = try allocator.alloc(Target, sectionMaxSize * 50);
-        self.directionBuffer = try allocator.alloc(utils.Direction, sectionMaxSize);
-
-        self.head = Head{
-            .recIdx = 0,
-            .directionIdx = 0,
-        };
-        self.recBuffer[0] = Rectangle{
-            .x = (global.screenWidth / 2),
-            .y = global.screenHeight / 2,
-            .width = startingSize,
-            .height = startingSize,
-        };
-        self.directionBuffer[0] = utils.Direction.left;
-
-        for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
-            const i_f32: f32 = @floatFromInt(idx + 1);
-            self.recBuffer[idx + 1] = Rectangle{
-                .x = (global.screenWidth / 2) + (startingSize * i_f32),
-                .y = global.screenHeight / 2,
-                .width = startingSize,
-                .height = startingSize,
-            };
-            section.* = Section{
-                .recIdx = idx + 1,
-                .directionIdx = idx + 1,
-                .targetPool = self.targetBuffer.ptr + (idx * 50),
-            };
-            self.directionBuffer[idx + 1] = utils.Direction.left;
-        }
-
-        self.recBufferLength = self.sectionBufferLength + 1;
-        self.directionBufferLength = self.sectionBufferLength + 1;
-
-        return self;
     }
 
     pub inline fn directionChange(self: *Snake, direction: utils.Direction) void {
@@ -156,8 +173,8 @@ pub const Snake = struct {
             section.targetPool[section.targetCurrentIdx] = Target{
                 .nextDirection = direction,
                 .position = utils.Point{
-                    .x = self.recBuffer[self.head.recIdx].x,
-                    .y = self.recBuffer[self.head.recIdx].y,
+                    .x = self.posBuffer[self.head.positionIdx],
+                    .y = self.posBuffer[self.head.positionIdx + 1],
                 },
             };
 
@@ -168,34 +185,40 @@ pub const Snake = struct {
     pub inline fn selfCollision(self: *Snake) bool {
         const checkOverlapArea = switch (self.directionBuffer[self.head.directionIdx]) {
             .up => Rectangle{
-                .x = self.recBuffer[self.head.recIdx].x + (self.recBuffer[self.head.recIdx].width * 0.25),
-                .y = self.recBuffer[self.head.recIdx].y,
-                .width = self.recBuffer[self.head.recIdx].width * 0.25,
+                .x = self.posBuffer[self.head.positionIdx] + (startingDimension * 0.25),
+                .y = self.posBuffer[self.head.positionIdx + 1],
+                .width = startingDimension * 0.25,
                 .height = 1.0,
             },
             .down => Rectangle{
-                .x = self.recBuffer[self.head.recIdx].x + (self.recBuffer[self.head.recIdx].width * 0.25),
-                .y = self.recBuffer[self.head.recIdx].y + self.recBuffer[self.head.recIdx].height,
-                .width = self.recBuffer[self.head.recIdx].width * 0.25,
+                .x = self.posBuffer[self.head.positionIdx] + (startingDimension * 0.25),
+                .y = self.posBuffer[self.head.positionIdx + 1] + startingDimension,
+                .width = startingDimension * 0.25,
                 .height = 1.0,
             },
             .left => Rectangle{
-                .x = self.recBuffer[self.head.recIdx].x,
-                .y = self.recBuffer[self.head.recIdx].y + (self.recBuffer[self.head.recIdx].height * 0.25),
+                .x = self.posBuffer[self.head.positionIdx],
+                .y = self.posBuffer[self.head.positionIdx + 1] + (startingDimension * 0.25),
                 .width = 1.0,
-                .height = self.recBuffer[self.head.recIdx].height * 0.25,
+                .height = startingDimension * 0.25,
             },
             .right => Rectangle{
-                .x = self.recBuffer[self.head.recIdx].x + self.recBuffer[self.head.recIdx].width,
-                .y = self.recBuffer[self.head.recIdx].y + (self.recBuffer[self.head.recIdx].height * 0.25),
+                .x = self.posBuffer[self.head.positionIdx] + startingDimension,
+                .y = self.posBuffer[self.head.positionIdx + 1] + (startingDimension * 0.25),
                 .width = 1.0,
-                .height = self.recBuffer[self.head.recIdx].height * 0.25,
+                .height = startingDimension * 0.25,
             },
         };
 
         // NOTE: Impossible to collide with first two sections
         for (self.sectionBuffer[2..self.sectionBufferLength]) |*section| {
-            const sectionRec = self.recBuffer[section.recIdx];
+            // TODO: Stop depending on Rectangle for collision
+            const sectionRec = Rectangle{
+                .x = self.posBuffer[section.posIdx],
+                .y = self.posBuffer[section.posIdx + 1],
+                .width = startingDimension,
+                .height = startingDimension,
+            };
             if (checkOverlapArea.checkCollision(sectionRec)) {
                 return true;
             }
@@ -204,14 +227,31 @@ pub const Snake = struct {
     }
 
     pub inline fn hasEatenFruit(self: Snake, fruit: Fruit) bool {
-        return fruit.fruit.checkCollision(self.recBuffer[self.head.recIdx]);
+        // TODO: Look into checkCollisionPoint
+        return fruit.fruit.checkCollision(
+            Rectangle{
+                .x = self.posBuffer[self.head.positionIdx],
+                .y = self.posBuffer[self.head.positionIdx + 1],
+                .width = startingDimension,
+                .height = startingDimension,
+            },
+        );
     }
 
     pub inline fn fruitOverlap(self: Snake, fruit: Fruit) bool {
         var idx: usize = 0;
-        while (idx < self.recBufferLength) : (idx += 1) {
-            if (self.recBuffer[idx].checkCollision(fruit.fruit))
+        while (idx < self.posBufferLength) : (idx += 1) {
+            if (fruit.fruit.checkCollision(
+                Rectangle{
+                    .x = self.posBuffer[idx * 2],
+                    .y = self.posBuffer[(idx * 2) + 1],
+                    .width = startingDimension,
+                    .height = startingDimension,
+                },
+            ))
                 return true;
+            // if (self.posBuffer[idx].checkCollision(fruit.fruit))
+            //     return true;
         }
         return false;
     }
@@ -221,12 +261,12 @@ pub const Snake = struct {
             const collisionArea = switch (self.directionBuffer[section.directionIdx]) {
                 .down => Rectangle{
                     .x = section.targetPool[0].position.x,
-                    .y = section.targetPool[0].position.y + (self.recBuffer[section.recIdx].height - 1),
+                    .y = section.targetPool[0].position.y + (startingDimension - 1),
                     .width = 2,
                     .height = 2,
                 },
                 .right => Rectangle{
-                    .x = section.targetPool[0].position.x + (self.recBuffer[section.recIdx].width - 2) - 1,
+                    .x = section.targetPool[0].position.x + (startingDimension - 2) - 1,
                     .y = section.targetPool[0].position.y,
                     .width = 2,
                     .height = 2,
@@ -238,9 +278,16 @@ pub const Snake = struct {
                     .height = 2,
                 },
             };
-            if (self.recBuffer[section.recIdx].checkCollision(collisionArea)) {
-                self.recBuffer[section.recIdx].x = section.targetPool[0].position.x;
-                self.recBuffer[section.recIdx].y = section.targetPool[0].position.y;
+            if (collisionArea.checkCollision(
+                Rectangle{
+                    .x = self.posBuffer[section.posIdx],
+                    .y = self.posBuffer[section.posIdx + 1],
+                    .width = startingDimension,
+                    .height = startingDimension,
+                },
+            )) {
+                self.posBuffer[section.posIdx] = section.targetPool[0].position.x;
+                self.posBuffer[section.posIdx + 1] = section.targetPool[0].position.y;
 
                 self.directionBuffer[section.directionIdx] = section.targetPool[0].nextDirection;
 
@@ -249,15 +296,26 @@ pub const Snake = struct {
                 if (section.targetCurrentIdx != 0) {
                     section.targetCurrentIdx -= 1;
                 }
-            }
+            } // if (self.posBuffer[section.posIdx].checkCollision(collisionArea)) {
+            //     self.posBuffer[section.posIdx].x = section.targetPool[0].position.x;
+            //     self.posBuffer[section.posIdx].y = section.targetPool[0].position.y;
+
+            //     self.directionBuffer[section.directionIdx] = section.targetPool[0].nextDirection;
+
+            //     queueShift(section.targetPool);
+
+            //     if (section.targetCurrentIdx != 0) {
+            //         section.targetCurrentIdx -= 1;
+            //     }
+            // }
         }
     }
 
     pub inline fn move(self: *Snake, dt: f32) void {
         var i: usize = 0;
 
-        utils.moveRec(
-            &self.recBuffer[self.head.recIdx],
+        utils.movePos(
+            &self.posBuffer[self.head.positionIdx..2],
             switch (self.directionBuffer[self.head.directionIdx]) {
                 .left => -(movement * (self.acceleration * dt)),
                 .right => movement * (self.acceleration * dt),
@@ -270,12 +328,12 @@ pub const Snake = struct {
             },
         );
 
-        utils.teleport(&self.recBuffer[self.head.recIdx]);
+        utils.teleport(&self.posBuffer[self.head.positionIdx]);
 
-        var prevRec = &self.recBuffer[self.head.recIdx];
+        var prevRec = &self.posBuffer[self.head.positionIdx..2];
         while (i < self.sectionBufferLength) : (i += 1) {
-            utils.moveRecIfNoColision(
-                &self.recBuffer[self.sectionBuffer[i].recIdx],
+            utils.movePosIfNoColision(
+                &self.posBuffer[self.sectionBuffer[i].posIdx],
                 prevRec,
                 self.directionBuffer[self.sectionBuffer[i].directionIdx],
                 switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
@@ -289,8 +347,8 @@ pub const Snake = struct {
                     else => 0,
                 },
             );
-            prevRec = &self.recBuffer[self.sectionBuffer[i].recIdx];
-            utils.teleport(&self.recBuffer[self.sectionBuffer[i].recIdx]);
+            prevRec = &self.posBuffer[self.sectionBuffer[i].posIdx];
+            utils.teleport(&self.posBuffer[self.sectionBuffer[i].posIdx]);
         }
 
         self.handleQueue();
@@ -301,24 +359,39 @@ pub const Snake = struct {
 
         while (i < self.sectionBufferLength) : (i += 1) {
             raylib.drawRectangleRounded(
-                self.recBuffer[self.sectionBuffer[i].recIdx],
+                Rectangle{
+                    .x = self.posBuffer[self.sectionBuffer[i].posIdx],
+                    .y = self.posBuffer[self.sectionBuffer[i].posIdx + 1],
+                    .width = startingDimension,
+                    .height = startingDimension,
+                },
                 0.45,
                 500,
                 global.yellow,
             );
         }
 
-        raylib.drawRectangleRounded(self.recBuffer[self.head.recIdx], 0.45, 500, global.orange);
+        raylib.drawRectangleRounded(
+            Rectangle{
+                .x = self.posBuffer[self.head.positionIdx],
+                .y = self.posBuffer[self.head.positionIdx + 1],
+                .width = startingDimension,
+                .height = startingDimension,
+            },
+            0.45,
+            500,
+            global.orange,
+        );
     }
 };
 
 const Head = struct {
-    recIdx: usize,
+    positionIdx: usize,
     directionIdx: usize,
 };
 
 const Section = struct {
-    recIdx: usize,
+    posIdx: usize,
     directionIdx: usize,
     targetPool: [*]Target,
     targetCurrentIdx: usize = 0,

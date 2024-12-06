@@ -34,73 +34,75 @@ pub const Allocator = struct {
     }
 };
 
-pub inline fn moveRec(rec: *Rectangle, x: f32, y: f32) void {
-    rec.x += x;
-    rec.y += y;
+pub inline fn movePos(pos: [*]f32, x: f32, y: f32) void {
+    pos[0] += x;
+    pos[1] += y;
 }
 
 // TODO: author collision function
 
-pub inline fn moveRecIfNoColision(
-    source: *Rectangle,
-    check: *Rectangle,
+pub inline fn movePosIfNoColision(
+    source: *[]f32,
+    check: *[]f32,
+    sourceDimension: f32,
+    checkDimension: f32,
     direction: Direction,
     x: f32,
     y: f32,
 ) void {
     switch (direction) {
         .left, .right => {
-            if (source.y == check.y) {
-                if ((source.x < (check.x + check.width) and
-                    (source.x + source.width) > check.x) and
-                    (source.y < (check.y + check.height) and
-                    (source.y + source.height) > check.y))
+            if (source[1] == check[1]) {
+                if ((source[0] < (check[0] + checkDimension) and
+                    (source[0] + sourceDimension) > check[0]) and
+                    (source[1] < (check[1] + checkDimension) and
+                    (source[1] + sourceDimension) > check[1]))
                 {
-                    source.y += y;
+                    source[1] += y;
                 } else {
-                    source.x += x;
-                    source.y += y;
+                    source[0] += x;
+                    source[1] += y;
                 }
             } else {
-                source.x += x;
-                source.y += y;
+                source[0] += x;
+                source[1] += y;
             }
         },
         .up, .down => {
-            if (source.x == check.x) {
-                if ((source.x < (check.x + check.width) and
-                    (source.x + source.width) > check.x) and
-                    (source.y < (check.y + check.height) and
-                    (source.y + source.height) > check.y))
+            if (source[0] == check[0]) {
+                if ((source[0] < (check[0] + checkDimension) and
+                    (source[0] + sourceDimension) > check[0]) and
+                    (source[1] < (check[1] + checkDimension) and
+                    (source[1] + source.height) > check[1]))
                 {
-                    source.x += x;
+                    source[0] += x;
                 } else {
-                    source.x += x;
-                    source.y += y;
+                    source[0] += x;
+                    source[1] += y;
                 }
             } else {
-                source.x += x;
-                source.y += y;
+                source[0] += x;
+                source[1] += y;
             }
         },
     }
 }
 
-pub fn teleport(rec: *Rectangle) void {
-    if (rec.x > global.screenWidth + rec.width) {
-        rec.x = 0;
+pub inline fn teleport(pos: [*]f32) void {
+    if (pos[0] > global.screenWidth + pos.width) {
+        pos[0] = 0;
         return;
     }
-    if (rec.x < 0 - rec.width) {
-        rec.x = global.screenWidth;
+    if (pos[0] < 0 - pos.width) {
+        pos[0] = global.screenWidth;
         return;
     }
-    if (rec.y > global.screenHeight + rec.height) {
-        rec.y = 0;
+    if (pos[1] > global.screenHeight + pos.height) {
+        pos[1] = 0;
         return;
     }
-    if (rec.y < 0 - rec.height) {
-        rec.y = global.screenHeight;
+    if (pos[1] < 0 - pos.height) {
+        pos[1] = global.screenHeight;
         return;
     }
 }
