@@ -39,11 +39,9 @@ pub inline fn movePos(pos: [*]f32, x: f32, y: f32) void {
     pos[1] += y;
 }
 
-// TODO: author collision function
-
 pub inline fn movePosIfNoColision(
-    source: *[]f32,
-    check: *[]f32,
+    source: [*]f32,
+    check: [*]f32,
     sourceDimension: f32,
     checkDimension: f32,
     direction: Direction,
@@ -73,7 +71,7 @@ pub inline fn movePosIfNoColision(
                 if ((source[0] < (check[0] + checkDimension) and
                     (source[0] + sourceDimension) > check[0]) and
                     (source[1] < (check[1] + checkDimension) and
-                    (source[1] + source.height) > check[1]))
+                    (source[1] + sourceDimension) > check[1]))
                 {
                     source[0] += x;
                 } else {
@@ -88,20 +86,20 @@ pub inline fn movePosIfNoColision(
     }
 }
 
-pub inline fn teleport(pos: [*]f32) void {
-    if (pos[0] > global.screenWidth + pos.width) {
+pub inline fn teleport(pos: [*]f32, dimension: f32) void {
+    if (pos[0] > global.screenWidth + dimension) {
         pos[0] = 0;
         return;
     }
-    if (pos[0] < 0 - pos.width) {
+    if (pos[0] < 0 - dimension) {
         pos[0] = global.screenWidth;
         return;
     }
-    if (pos[1] > global.screenHeight + pos.height) {
+    if (pos[1] > global.screenHeight + dimension) {
         pos[1] = 0;
         return;
     }
-    if (pos[1] < 0 - pos.height) {
+    if (pos[1] < 0 - dimension) {
         pos[1] = global.screenHeight;
         return;
     }

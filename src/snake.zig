@@ -132,16 +132,16 @@ pub const Snake = struct {
         }
 
         self.posBuffer[section.posIdx] = switch (self.directionBuffer[prevSection.directionIdx]) {
-            .up => self.posBuffer[prevSection.posIdx].x,
-            .down => self.posBuffer[prevSection.posIdx].x,
-            .left => self.posBuffer[prevSection.posIdx].x + startingDimension,
-            .right => self.posBuffer[prevSection.posIdx].x - startingDimension,
+            .up => self.posBuffer[prevSection.posIdx],
+            .down => self.posBuffer[prevSection.posIdx],
+            .left => self.posBuffer[prevSection.posIdx] + startingDimension,
+            .right => self.posBuffer[prevSection.posIdx] - startingDimension,
         };
         self.posBuffer[section.posIdx + 1] = switch (self.directionBuffer[prevSection.directionIdx]) {
-            .up => self.posBuffer[prevSection.posIdx].y + startingDimension,
-            .down => self.posBuffer[prevSection.posIdx].y - startingDimension,
-            .left => self.posBuffer[prevSection.posIdx].y,
-            .right => self.posBuffer[prevSection.posIdx].y,
+            .up => self.posBuffer[prevSection.posIdx + 1] + startingDimension,
+            .down => self.posBuffer[prevSection.posIdx + 1] - startingDimension,
+            .left => self.posBuffer[prevSection.posIdx + 1],
+            .right => self.posBuffer[prevSection.posIdx + 1],
         };
         // self.posBuffer[section.posIdx] = Rectangle{
         //     .x = switch (self.directionBuffer[prevSection.directionIdx]) {
@@ -315,7 +315,7 @@ pub const Snake = struct {
         var i: usize = 0;
 
         utils.movePos(
-            &self.posBuffer[self.head.positionIdx..2],
+            (self.posBuffer.ptr + self.head.positionIdx),
             switch (self.directionBuffer[self.head.directionIdx]) {
                 .left => -(movement * (self.acceleration * dt)),
                 .right => movement * (self.acceleration * dt),
@@ -328,13 +328,15 @@ pub const Snake = struct {
             },
         );
 
-        utils.teleport(&self.posBuffer[self.head.positionIdx]);
+        utils.teleport((self.posBuffer.ptr + self.head.positionIdx), startingDimension);
 
-        var prevRec = &self.posBuffer[self.head.positionIdx..2];
+        var prevRec = self.posBuffer.ptr + self.head.positionIdx;
         while (i < self.sectionBufferLength) : (i += 1) {
             utils.movePosIfNoColision(
-                &self.posBuffer[self.sectionBuffer[i].posIdx],
+                (self.posBuffer.ptr + self.sectionBuffer[i].posIdx),
                 prevRec,
+                startingDimension,
+                startingDimension,
                 self.directionBuffer[self.sectionBuffer[i].directionIdx],
                 switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
                     .left => -(movement * self.acceleration * dt),
@@ -347,8 +349,8 @@ pub const Snake = struct {
                     else => 0,
                 },
             );
-            prevRec = &self.posBuffer[self.sectionBuffer[i].posIdx];
-            utils.teleport(&self.posBuffer[self.sectionBuffer[i].posIdx]);
+            prevRec = self.posBuffer.ptr + self.sectionBuffer[i].posIdx;
+            utils.teleport((self.posBuffer.ptr + self.sectionBuffer[i].posIdx), startingDimension);
         }
 
         self.handleQueue();
