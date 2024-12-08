@@ -1,37 +1,70 @@
 const std = @import("std");
 const raylib = @import("raylib");
 const global = @import("global.zig");
+const builtin = @import("builtin");
 
 const Rectangle = raylib.Rectangle;
 const FixedBufferAllocator = std.heap.FixedBufferAllocator;
 const pager = std.heap.page_allocator;
+const HeapAllocator = std.heap.HeapAllocator;
 const Error = std.mem.Allocator.Error;
 const Keys = raylib.KeyboardKey;
 
-pub const Allocator = struct {
-    fba: FixedBufferAllocator = undefined,
-    allocator: std.mem.Allocator = undefined,
-    memBuffer: []u8,
+pub const Allocator = switch (builtin.os.tag) {
+    .windows => struct {
+        fba: FixedBufferAllocator = undefined,
+        ha: HeapAllocator = undefined,
+        heapAllocator: std.mem.Allocator = undefined,
+        allocator: std.mem.Allocator = undefined,
+        memBuffer: []u8 = undefined,
 
-    // TODO: Pass allocator size to function
-    pub fn init() !Allocator {
-        var self = Allocator{
-            .memBuffer = try pager.alloc(u8, 100 * 1024 * 1024),
-        };
+        // TODO: Pass allocator size to function
+        pub fn init() !Allocator {
+            var self = Allocator{
+                .ha = HeapAllocator.init(),
+            };
+            self.heapAllocator = self.ha.allocator();
+            self.memBuffer = try self.heapAllocator.alloc(u8, 1024 * 1024);
 
-        self.fba = FixedBufferAllocator.init(self.memBuffer);
-        self.allocator = self.fba.allocator();
+            self.fba = FixedBufferAllocator.init(self.memBuffer);
+            self.allocator = self.fba.allocator();
 
-        return self;
-    }
+            return self;
+        }
 
-    pub fn deinit(self: *Allocator) void {
-        pager.free(self.memBuffer);
-    }
+        pub fn deinit(self: *Allocator) void {
+            self.ha.deinit();
+        }
 
-    pub fn alloc(self: *Allocator, comptime T: type, size: usize) Error![]T {
-        return self.allocator.alloc(T, size);
-    }
+        pub fn alloc(self: *Allocator, comptime T: type, size: usize) Error![]T {
+            return self.allocator.alloc(T, size);
+        }
+    },
+    else => struct {
+        fba: FixedBufferAllocator = undefined,
+        allocator: std.mem.Allocator = undefined,
+        memBuffer: []u8,
+
+        // TODO: Pass allocator size to function
+        pub fn init() !Allocator {
+            var self = Allocator{
+                .memBuffer = try pager.alloc(u8, 100 * 1024 * 1024),
+            };
+
+            self.fba = FixedBufferAllocator.init(self.memBuffer);
+            self.allocator = self.fba.allocator();
+
+            return self;
+        }
+
+        pub fn deinit(self: *Allocator) void {
+            pager.free(self.memBuffer);
+        }
+
+        pub fn alloc(self: *Allocator, comptime T: type, size: usize) Error![]T {
+            return self.allocator.alloc(T, size);
+        }
+    },
 };
 
 pub inline fn movePos(pos: [*]f32, x: f32, y: f32) void {

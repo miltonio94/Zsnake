@@ -32,7 +32,7 @@ pub const Snake = struct {
         var self = Snake{};
 
         self.sectionBufferLength = initLength;
-        self.posBuffer = try allocator.alloc(f32, sectionMaxSize + 2);
+        self.posBuffer = try allocator.alloc(f32, (sectionMaxSize * 2) + 2);
         self.sectionBuffer = try allocator.alloc(Section, sectionMaxSize);
         self.targetBuffer = try allocator.alloc(Target, sectionMaxSize * 50);
         self.directionBuffer = try allocator.alloc(utils.Direction, sectionMaxSize + 1);
@@ -44,23 +44,12 @@ pub const Snake = struct {
         self.posBuffer[0] = (global.screenWidth / 2);
         self.posBuffer[1] = global.screenHeight / 2;
 
-        // self.posBuffer[0] = Rectangle{
-        //     .x = (global.screenWidth / 2),
-        //     .y = global.screenHeight / 2,
-        //     .width = startingDimension,
-        //     .height = startingDimension,
-        // };
         self.directionBuffer[0] = utils.Direction.left;
         for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
             const i_f32: f32 = @floatFromInt(idx + 1);
             self.posBuffer[(idx * 2) + 2] = (global.screenWidth / 2) + (startingDimension * i_f32);
             self.posBuffer[(idx * 2) + 3] = global.screenHeight / 2;
-            // self.posBuffer[(idx + 2) * 2] = Rectangle{
-            //     .x = (global.screenWidth / 2) + (startingDimension * i_f32),
-            //     .y = global.screenHeight / 2,
-            //     .width = startingDimension,
-            //     .height = startingDimension,
-            // };
+
             section.* = Section{
                 .posIdx = (idx * 2) + 2,
                 .directionIdx = idx + 1,
@@ -82,23 +71,12 @@ pub const Snake = struct {
         };
         self.posBuffer[0] = (global.screenWidth / 2);
         self.posBuffer[1] = global.screenHeight / 2;
-        // self.posBuffer[0] = Rectangle{
-        //     .x = (global.screenWidth / 2),
-        //     .y = global.screenHeight / 2,
-        //     .width = startingDimension,
-        //     .height = startingDimension,
-        // };
         self.directionBuffer[0] = utils.Direction.left;
 
         self.sectionBufferLength = initLength;
         for ((self.sectionBuffer[0..self.sectionBufferLength]), 0..) |*section, idx| {
             const i_f32: f32 = @floatFromInt(idx + 1);
-            // self.posBuffer[idx + 1] = Rectangle{
-            //     .x = (global.screenWidth / 2) + (startingDimension * i_f32),
-            //     .y = global.screenHeight / 2,
-            //     .width = startingDimension,
-            //     .height = startingDimension,
-            // };
+
             self.posBuffer[(idx * 2) + 2] = (global.screenWidth / 2) + (startingDimension * i_f32);
             self.posBuffer[(idx * 2) + 3] = global.screenHeight / 2;
 
@@ -143,22 +121,6 @@ pub const Snake = struct {
             .left => self.posBuffer[prevSection.posIdx + 1],
             .right => self.posBuffer[prevSection.posIdx + 1],
         };
-        // self.posBuffer[section.posIdx] = Rectangle{
-        //     .x = switch (self.directionBuffer[prevSection.directionIdx]) {
-        //         .up => self.posBuffer[prevSection.posIdx].x,
-        //         .down => self.posBuffer[prevSection.posIdx].x,
-        //         .left => self.posBuffer[prevSection.posIdx].x + startingDimension,
-        //         .right => self.posBuffer[prevSection.posIdx].x - startingDimension,
-        //     },
-        //     .y = switch (self.directionBuffer[prevSection.directionIdx]) {
-        //         .up => self.posBuffer[prevSection.posIdx].y + startingDimension,
-        //         .down => self.posBuffer[prevSection.posIdx].y - startingDimension,
-        //         .left => self.posBuffer[prevSection.posIdx].y,
-        //         .right => self.posBuffer[prevSection.posIdx].y,
-        //     },
-        //     .width = startingDimension,
-        //     .height = startingDimension,
-        // };
         self.directionBuffer[section.directionIdx] = self.directionBuffer[prevSection.directionIdx];
     }
 
@@ -248,10 +210,9 @@ pub const Snake = struct {
                     .width = startingDimension,
                     .height = startingDimension,
                 },
-            ))
+            )) {
                 return true;
-            // if (self.posBuffer[idx].checkCollision(fruit.fruit))
-            //     return true;
+            }
         }
         return false;
     }
@@ -296,18 +257,7 @@ pub const Snake = struct {
                 if (section.targetCurrentIdx != 0) {
                     section.targetCurrentIdx -= 1;
                 }
-            } // if (self.posBuffer[section.posIdx].checkCollision(collisionArea)) {
-            //     self.posBuffer[section.posIdx].x = section.targetPool[0].position.x;
-            //     self.posBuffer[section.posIdx].y = section.targetPool[0].position.y;
-
-            //     self.directionBuffer[section.directionIdx] = section.targetPool[0].nextDirection;
-
-            //     queueShift(section.targetPool);
-
-            //     if (section.targetCurrentIdx != 0) {
-            //         section.targetCurrentIdx -= 1;
-            //     }
-            // }
+            }
         }
     }
 
