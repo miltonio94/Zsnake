@@ -18,13 +18,12 @@ pub const Allocator = switch (builtin.os.tag) {
         allocator: std.mem.Allocator = undefined,
         memBuffer: []u8 = undefined,
 
-        // TODO: Pass allocator size to function
-        pub fn init() !Allocator {
+        pub fn init(size: usize) !Allocator {
             var self = Allocator{
                 .ha = HeapAllocator.init(),
             };
             self.heapAllocator = self.ha.allocator();
-            self.memBuffer = try self.heapAllocator.alloc(u8, 1024 * 1024);
+            self.memBuffer = try self.heapAllocator.alloc(u8, size);
 
             self.fba = FixedBufferAllocator.init(self.memBuffer);
             self.allocator = self.fba.allocator();
@@ -62,6 +61,7 @@ pub const Allocator = switch (builtin.os.tag) {
         }
 
         pub fn alloc(self: *Allocator, comptime T: type, size: usize) Error![]T {
+            std.debug.print("allocating \n", .{});
             return self.allocator.alloc(T, size);
         }
     },

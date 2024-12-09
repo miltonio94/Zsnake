@@ -123,7 +123,7 @@ pub const World = struct {
             .state = .menu,
             .fruit = Fruit.Init(),
             .dt = raylib.getFrameTime(),
-            .allocator = try utils.Allocator.init(),
+            .allocator = try utils.Allocator.init(1024 * 1024),
         };
 
         while (self.snake.fruitOverlap(self.fruit)) {
