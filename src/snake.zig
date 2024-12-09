@@ -28,7 +28,7 @@ pub const Snake = struct {
     posBufferLength: usize = 0,
     directionBufferLength: usize = 0,
 
-    pub inline fn init(allocator: *utils.Allocator) !Snake {
+    pub inline fn init(allocator: *std.mem.Allocator) !Snake {
         var self = Snake{};
 
         self.sectionBufferLength = initLength;

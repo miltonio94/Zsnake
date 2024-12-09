@@ -17,75 +17,6 @@ const print = std.debug.print;
 const BitPotionFont = @embedFile("./assets/BitPotion.ttf");
 
 pub const World = struct {
-    const MenuSelection = enum {
-        start,
-        restart,
-        quit,
-
-        inline fn nextValue(self: MenuSelection) MenuSelection {
-            return switch (self) {
-                .start => .restart,
-                .restart => .quit,
-                .quit => .start,
-            };
-        }
-
-        inline fn prevValue(self: MenuSelection) MenuSelection {
-            return switch (self) {
-                .start => .quit,
-                .restart => .start,
-                .quit => .restart,
-            };
-        }
-
-        pub inline fn update(self: *MenuSelection, direction: utils.Direction) void {
-            switch (direction) {
-                .up => {
-                    self.* = self.prevValue();
-                },
-                .down => {
-                    self.* = self.nextValue();
-                },
-                else => {},
-            }
-        }
-
-        pub inline fn draw(self: MenuSelection) void {
-            const startingPoint = -(global.screenHeight / 4);
-            utils.drawTextCentered(
-                "Start",
-                fontSize,
-                font,
-                fontSpacing,
-                if (self == .start) global.red else global.yellow,
-                startingPoint,
-            );
-            utils.drawTextCentered(
-                "Restart",
-                fontSize,
-                font,
-                fontSpacing,
-                if (self == .restart) global.red else global.yellow,
-                startingPoint + 45,
-            );
-            utils.drawTextCentered(
-                "Quit",
-                fontSize,
-                font,
-                fontSpacing,
-                if (self == .quit) global.red else global.yellow,
-                startingPoint + 90,
-            );
-        }
-    };
-
-    const State = enum {
-        paused,
-        menu,
-        play,
-        gameOver,
-        restart,
-    };
     const rectOverlay = Rectangle{
         .x = 0,
         .y = 0,
@@ -105,7 +36,7 @@ pub const World = struct {
     var newDirection: ?utils.Direction = null;
 
     dt: f32 = 0,
-    allocator: utils.Allocator = undefined,
+    allocator: std.heap.ArenaAllocator = undefined,
 
     snake: snake.Snake = undefined,
     fruit: Fruit,
@@ -123,14 +54,15 @@ pub const World = struct {
             .state = .menu,
             .fruit = Fruit.Init(),
             .dt = raylib.getFrameTime(),
-            .allocator = try utils.Allocator.init(1024 * 1024),
+            .allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator),
         };
 
         while (self.snake.fruitOverlap(self.fruit)) {
             self.fruit.respawn();
         }
 
-        self.snake = try snake.Snake.init(&self.allocator);
+        var all = self.allocator.allocator();
+        self.snake = try snake.Snake.init(&all);
 
         return self;
     }
@@ -301,4 +233,74 @@ pub const World = struct {
             print("FPS: {d:.10}\n", .{self.dt});
         }
     }
+
+    const MenuSelection = enum {
+        start,
+        restart,
+        quit,
+
+        inline fn nextValue(self: MenuSelection) MenuSelection {
+            return switch (self) {
+                .start => .restart,
+                .restart => .quit,
+                .quit => .start,
+            };
+        }
+
+        inline fn prevValue(self: MenuSelection) MenuSelection {
+            return switch (self) {
+                .start => .quit,
+                .restart => .start,
+                .quit => .restart,
+            };
+        }
+
+        pub inline fn update(self: *MenuSelection, direction: utils.Direction) void {
+            switch (direction) {
+                .up => {
+                    self.* = self.prevValue();
+                },
+                .down => {
+                    self.* = self.nextValue();
+                },
+                else => {},
+            }
+        }
+
+        pub inline fn draw(self: MenuSelection) void {
+            const startingPoint = -(global.screenHeight / 4);
+            utils.drawTextCentered(
+                "Start",
+                fontSize,
+                font,
+                fontSpacing,
+                if (self == .start) global.red else global.yellow,
+                startingPoint,
+            );
+            utils.drawTextCentered(
+                "Restart",
+                fontSize,
+                font,
+                fontSpacing,
+                if (self == .restart) global.red else global.yellow,
+                startingPoint + 45,
+            );
+            utils.drawTextCentered(
+                "Quit",
+                fontSize,
+                font,
+                fontSpacing,
+                if (self == .quit) global.red else global.yellow,
+                startingPoint + 90,
+            );
+        }
+    };
+
+    const State = enum {
+        paused,
+        menu,
+        play,
+        gameOver,
+        restart,
+    };
 };
