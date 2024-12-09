@@ -37,6 +37,29 @@ pub const Snake = struct {
         self.targetBuffer = try allocator.alloc(Target, sectionMaxSize * 50);
         self.directionBuffer = try allocator.alloc(utils.Direction, sectionMaxSize + 1);
 
+        utils.initBuffer(f32, self.posBuffer.ptr, 0.0, self.posBuffer.len);
+        utils.initBuffer(Section, self.sectionBuffer.ptr, .{
+            .posIdx = 0,
+            .directionIdx = 0,
+            .targetPool = undefined,
+            .targetCurrentIdx = 0,
+        }, self.posBuffer.len);
+        utils.initBuffer(
+            Target,
+            self.targetBuffer.ptr,
+            .{
+                .position = .{
+                    .x = 0.0,
+                    .y = 0.0,
+                },
+                .nextDirection = utils.Direction.left,
+            },
+            self.targetBuffer.len,
+        );
+        utils.initBuffer(utils.Direction, self.directionBuffer.ptr
+                             , utils.Direction.left
+                             , self.directionBuffer.len,);
+
         self.head = Head{
             .positionIdx = 0,
             .directionIdx = 0,

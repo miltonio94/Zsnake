@@ -12,6 +12,12 @@ const HeapAllocator = std.heap.HeapAllocator;
 const Error = std.mem.Allocator.Error;
 const Keys = raylib.KeyboardKey;
 
+pub inline fn initBuffer(comptime T: type, buffer:  [*]T, val: T, size: usize) void {
+    var i: usize = 0;
+    while (i < size) : (i += 1) {
+        buffer[i] = val;
+    }
+}
 
 pub inline fn movePos(pos: [*]f32, x: f32, y: f32) void {
     pos[0] += x;
