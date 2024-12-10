@@ -54,7 +54,7 @@ pub const World = struct {
             .state = .menu,
             .fruit = Fruit.Init(),
             .dt = raylib.getFrameTime(),
-            .allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator),
+            .allocator = std.heap.ArenaAllocator.init(std.heap.c_allocator),
         };
 
         while (self.snake.fruitOverlap(self.fruit)) {

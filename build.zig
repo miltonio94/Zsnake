@@ -29,6 +29,8 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .target = target,
     });
+    exe.linkLibC();
+
     b.default_step.dependOn(&exe.step);
 
     exe.linkLibrary(raylib_artifact);
