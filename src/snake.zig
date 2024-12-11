@@ -56,9 +56,12 @@ pub const Snake = struct {
             },
             self.targetBuffer.len,
         );
-        utils.initBuffer(utils.Direction, self.directionBuffer.ptr
-                             , utils.Direction.left
-                             , self.directionBuffer.len,);
+        utils.initBuffer(
+            utils.Direction,
+            self.directionBuffer.ptr,
+            utils.Direction.left,
+            self.directionBuffer.len,
+        );
 
         self.head = Head{
             .positionIdx = 0,
@@ -285,46 +288,98 @@ pub const Snake = struct {
     }
 
     pub inline fn move(self: *Snake, dt: f32) void {
-        var i: usize = 0;
+        {
+            var vec_pos: @Vector((sectionMaxSize * 2) + 2, f32) = @splat(@as(f32, 0.0));
+            var vec_add: @Vector((sectionMaxSize * 2) + 2, f32) = @splat(@as(f32, 0.0));
 
-        utils.movePos(
-            (self.posBuffer.ptr + self.head.positionIdx),
-            switch (self.directionBuffer[self.head.directionIdx]) {
-                .left => -(movement * (self.acceleration * dt)),
-                .right => movement * (self.acceleration * dt),
-                else => 0,
-            },
-            switch (self.directionBuffer[self.head.directionIdx]) {
-                .up => -(movement * (self.acceleration * dt)),
-                .down => movement * (self.acceleration * dt),
-                else => 0,
-            },
-        );
+            {
+                var i: usize = 0;
+
+                while (i < 1002) : (i += 1) {
+                    vec_pos[i] = self.posBuffer[i];
+                }
+            }
+
+            {
+                var section_idx: usize = 0;
+                var idx: usize = 2;
+
+                vec_add[0] = switch (self.directionBuffer[self.head.directionIdx]) {
+                    .left => -(movement * (self.acceleration * dt)),
+                    .right => movement * (self.acceleration * dt),
+                    else => 0,
+                };
+                vec_add[1] = switch (self.directionBuffer[self.head.directionIdx]) {
+                    .up => -(movement * (self.acceleration * dt)),
+                    .down => movement * (self.acceleration * dt),
+                    else => 0,
+                };
+
+                while (idx < 1002) : (idx += 2) {
+                    vec_add[idx] = switch (self.directionBuffer[self.sectionBuffer[section_idx].directionIdx]) {
+                        .left => -(movement * self.acceleration * dt),
+                        .right => (movement * self.acceleration * dt),
+                        else => 0,
+                    };
+                    vec_add[idx + 1] = switch (self.directionBuffer[self.sectionBuffer[section_idx].directionIdx]) {
+                        .up => -(movement * self.acceleration * dt),
+                        .down => (movement * self.acceleration * dt),
+                        else => 0,
+                    };
+
+                    section_idx += 1;
+                }
+
+                const new_pos = vec_pos + vec_add;
+
+                idx = 0;
+
+                while (idx < 1002) : (idx += 1) {
+                    self.posBuffer[idx] = new_pos[idx];
+                }
+            }
+        }
+
+        // var i: usize = 0;
+
+        // utils.movePos(
+        //     (self.posBuffer.ptr + self.head.positionIdx),
+        //     switch (self.directionBuffer[self.head.directionIdx]) {
+        //         .left => -(movement * (self.acceleration * dt)),
+        //         .right => movement * (self.acceleration * dt),
+        //         else => 0,
+        //     },
+        //     switch (self.directionBuffer[self.head.directionIdx]) {
+        //         .up => -(movement * (self.acceleration * dt)),
+        //         .down => movement * (self.acceleration * dt),
+        //         else => 0,
+        //     },
+        // );
 
         utils.teleport((self.posBuffer.ptr + self.head.positionIdx), startingDimension);
 
-        var prevRec = self.posBuffer.ptr + self.head.positionIdx;
-        while (i < self.sectionBufferLength) : (i += 1) {
-            utils.movePosIfNoColision(
-                (self.posBuffer.ptr + self.sectionBuffer[i].posIdx),
-                prevRec,
-                startingDimension,
-                startingDimension,
-                self.directionBuffer[self.sectionBuffer[i].directionIdx],
-                switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
-                    .left => -(movement * self.acceleration * dt),
-                    .right => (movement * self.acceleration * dt),
-                    else => 0,
-                },
-                switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
-                    .up => -(movement * self.acceleration * dt),
-                    .down => (movement * self.acceleration * dt),
-                    else => 0,
-                },
-            );
-            prevRec = self.posBuffer.ptr + self.sectionBuffer[i].posIdx;
-            utils.teleport((self.posBuffer.ptr + self.sectionBuffer[i].posIdx), startingDimension);
-        }
+        // var prevRec = self.posBuffer.ptr + self.head.positionIdx;
+        // while (i < self.sectionBufferLength) : (i += 1) {
+        //     utils.movePosIfNoColision(
+        //         (self.posBuffer.ptr + self.sectionBuffer[i].posIdx),
+        //         prevRec,
+        //         startingDimension,
+        //         startingDimension,
+        //         self.directionBuffer[self.sectionBuffer[i].directionIdx],
+        //         switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
+        //             .left => -(movement * self.acceleration * dt),
+        //             .right => (movement * self.acceleration * dt),
+        //             else => 0,
+        //         },
+        //         switch (self.directionBuffer[self.sectionBuffer[i].directionIdx]) {
+        //             .up => -(movement * self.acceleration * dt),
+        //             .down => (movement * self.acceleration * dt),
+        //             else => 0,
+        //         },
+        //     );
+        //     prevRec = self.posBuffer.ptr + self.sectionBuffer[i].posIdx;
+        //     utils.teleport((self.posBuffer.ptr + self.sectionBuffer[i].posIdx), startingDimension);
+        // }
 
         self.handleQueue();
     }
